@@ -2,59 +2,53 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 
+console.log('✅ AlwaysJsonReporter loaded');
+
 class AlwaysJsonReporter {
   constructor(options) {
     this.options = options;
   }
 
-  async onEnd(result) {
-    // Debug: inspect the result object structure
-    console.log('DEBUG: result object keys:', Object.keys(result));
-    console.log('DEBUG: result.suites:', JSON.stringify(result.suites, null, 2));
-
-    // Write the full result object to a known location
-    const outputDir = path.join(process.cwd(), 'test-results');
-    if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
-    const outputFile = path.join(outputDir, 'results.json');
-    fs.writeFileSync(outputFile, JSON.stringify(result, null, 2), 'utf-8');
-    console.log('✅ [AlwaysJsonReporter] Wrote test results to', outputFile);
-
-    // Teams webhook
-    const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
-    console.log('DEBUG: Using webhook URL:', webhookUrl);
-    if (!webhookUrl) {
-      console.log('⚠️  No Teams webhook URL configured, skipping notification');
+  async onEnd() {
+    // Try to read the Playwright JSON report from the most likely locations
+    let jsonReportPath = path.join(process.cwd(), 'test-results', 'playwright-report.json');
+    if (!fs.existsSync(jsonReportPath)) {
+      jsonReportPath = path.join(process.cwd(), 'playwright-report', 'report.json');
+    }
+    let report;
+    try {
+      report = JSON.parse(fs.readFileSync(jsonReportPath, 'utf-8'));
+    } catch (e) {
+      console.error('❌ Could not read Playwright JSON report:', e);
       return;
     }
 
-    // Helper to collect all test results
-    function collectAllTests(suites, arr = []) {
-      if (!suites) return arr;
-      if (Array.isArray(suites)) {
-        suites.forEach(suite => collectAllTests(suite, arr));
-        return arr;
+    // Collect all test results
+    const allTests = [];
+    function collect(suites) {
+      if (!suites) return;
+      for (const suite of suites) {
+        if (suite.suites) collect(suite.suites);
+        if (suite.specs) {
+          for (const spec of suite.specs) {
+            for (const test of spec.tests) {
+              for (const result of test.results) {
+                allTests.push({
+                  title: spec.title,
+                  file: spec.file,
+                  line: spec.line,
+                  status: result.status,
+                  error: result.error?.message || '',
+                  attachments: result.attachments || []
+                });
+              }
+            }
+          }
+        }
       }
-      if (suites.specs) {
-        suites.specs.forEach(spec => {
-          spec.tests.forEach(test => {
-            test.results.forEach(result => {
-              arr.push({
-                title: spec.title,
-                status: result.status,
-                error: result.error?.message || '',
-                file: spec.file || '',
-                line: spec.line || '',
-                attachments: result.attachments || []
-              });
-            });
-          });
-        });
-      }
-      if (suites.suites) collectAllTests(suites.suites, arr);
-      return arr;
     }
+    collect(report.suites);
 
-    const allTests = collectAllTests(result.suites);
     const counts = { passed: 0, failed: 0, skipped: 0 };
     allTests.forEach(t => {
       if (t.status === 'passed') counts.passed++;
@@ -65,14 +59,12 @@ class AlwaysJsonReporter {
     const failedTests = allTests.filter(t => t.status === 'failed');
     const passedTests = allTests.filter(t => t.status === 'passed');
 
-    // Build the message
     let messageText = `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
 
     if (failedTests.length > 0) {
       messageText += `\n**❌ Failed Tests:**\n`;
       messageText += failedTests.map(f => {
         let msg = `**${f.title}**\nFile: ${f.file}:${f.line}\nError: ${f.error}`;
-        // Separate screenshots and logs
         const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
         const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
         if (screenshots.length > 0) {
@@ -95,13 +87,40 @@ class AlwaysJsonReporter {
       }).join('\n\n');
     }
 
+    // Print the full summary and details to the console for local review
+    console.log('DEBUG: Test counts:', counts);
+    console.log('DEBUG: Failed tests:', JSON.stringify(failedTests, null, 2));
+    console.log('DEBUG: Passed tests:', JSON.stringify(passedTests, null, 2));
+    console.log('DEBUG: Message text preview:\n', messageText);
+
+    // Only send to Teams if SEND_TEAMS env var is set to 'true'
+    if (process.env.SEND_TEAMS !== 'true') {
+      console.log('DEBUG: SEND_TEAMS is not set to "true". Skipping Teams notification.');
+      return;
+    }
+
+    // Teams webhook
+    const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+    console.log('DEBUG: Using webhook URL:', webhookUrl);
+    if (!webhookUrl) {
+      console.log('⚠️  No Teams webhook URL configured, skipping notification');
+      return;
+    }
+
+    // Add HTML report link if available
+    let htmlReportPath = path.join(process.cwd(), 'playwright-report', 'index.html');
+    let htmlReportLink = '';
+    if (fs.existsSync(htmlReportPath)) {
+      htmlReportLink = `\n\n[View HTML Report](${htmlReportPath})`;
+    }
+
     const message = {
       "@type": "MessageCard",
       "@context": "http://schema.org/extensions",
       "themeColor": failedTests.length > 0 ? "FF0000" : "00FF00",
       "summary": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
       "title": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
-      "text": messageText,
+      "text": messageText + htmlReportLink,
     };
 
     // Use global fetch if available, otherwise fallback to node-fetch
