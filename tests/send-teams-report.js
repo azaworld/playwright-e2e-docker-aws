@@ -47,19 +47,26 @@ allTests.forEach(t => {
 const failedTests = allTests.filter(t => t.status === 'failed');
 const passedTests = allTests.filter(t => t.status === 'passed');
 
-let messageText = `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
+// Add HTML report link at the top
+let htmlReportPath = path.join(process.cwd(), 'playwright-report', 'index.html');
+let htmlReportLink = '';
+if (fs.existsSync(htmlReportPath)) {
+  htmlReportLink = `[View HTML Report](${htmlReportPath})\n\n`;
+}
+
+let messageText = htmlReportLink + `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
 
 if (failedTests.length > 0) {
   messageText += `\n**❌ Failed Tests:**\n`;
   messageText += failedTests.map(f => {
-    let msg = `**${f.title}**\nFile: ${f.file}:${f.line}\nError: ${f.error}`;
+    let msg = `---\n**${f.title}**\nFile: \`${f.file}:${f.line}\`\n**Error:** \`${f.error}\``;
     const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
     const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
     if (screenshots.length > 0) {
-      msg += `\nScreenshots: ${screenshots.map(s => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
+      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
     }
     if (logs.length > 0) {
-      msg += `\nLogs: ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
+      msg += `\n**Logs:** ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
     }
     return msg;
   }).join('\n\n');
@@ -70,16 +77,8 @@ if (failedTests.length > 0) {
 if (passedTests.length > 0) {
   messageText += `\n\n**✅ Passed Tests:**\n`;
   messageText += passedTests.map(f => {
-    let msg = `**${f.title}**\nFile: ${f.file}:${f.line}`;
-    return msg;
-  }).join('\n\n');
-}
-
-// Add HTML report link if available
-let htmlReportPath = path.join(process.cwd(), 'playwright-report', 'index.html');
-let htmlReportLink = '';
-if (fs.existsSync(htmlReportPath)) {
-  htmlReportLink = `\n\n[View HTML Report](${htmlReportPath})`;
+    return `• **${f.title}** (${f.file}:${f.line})`;
+  }).join('\n');
 }
 
 const message = {
@@ -88,7 +87,7 @@ const message = {
   "themeColor": failedTests.length > 0 ? "FF0000" : "00FF00",
   "summary": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
   "title": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
-  "text": messageText + htmlReportLink,
+  "text": messageText,
 };
 
 // Use global fetch if available, otherwise fallback to node-fetch
