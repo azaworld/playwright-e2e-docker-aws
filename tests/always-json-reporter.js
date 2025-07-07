@@ -8,6 +8,10 @@ class AlwaysJsonReporter {
   }
 
   async onEnd(result) {
+    // Debug: inspect the result object structure
+    console.log('DEBUG: result object keys:', Object.keys(result));
+    console.log('DEBUG: result.suites:', JSON.stringify(result.suites, null, 2));
+
     // Write the full result object to a known location
     const outputDir = path.join(process.cwd(), 'test-results');
     if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
@@ -15,56 +19,113 @@ class AlwaysJsonReporter {
     fs.writeFileSync(outputFile, JSON.stringify(result, null, 2), 'utf-8');
     console.log('✅ [AlwaysJsonReporter] Wrote test results to', outputFile);
 
-    // Send Teams alert if there are failures
+    // Teams webhook
     const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+    console.log('DEBUG: Using webhook URL:', webhookUrl);
     if (!webhookUrl) {
       console.log('⚠️  No Teams webhook URL configured, skipping notification');
       return;
     }
 
-    // Check for any failed tests
-    const hasFailed = (obj) => {
-      if (!obj) return false;
-      if (Array.isArray(obj)) return obj.some(hasFailed);
-      if (obj.status === 'failed') return true;
-      if (obj.suites) return hasFailed(obj.suites);
-      if (obj.specs) return hasFailed(obj.specs);
-      if (obj.tests) return hasFailed(obj.tests);
-      if (obj.results) return hasFailed(obj.results);
-      return false;
+    // Helper to collect all test results
+    function collectAllTests(suites, arr = []) {
+      if (!suites) return arr;
+      if (Array.isArray(suites)) {
+        suites.forEach(suite => collectAllTests(suite, arr));
+        return arr;
+      }
+      if (suites.specs) {
+        suites.specs.forEach(spec => {
+          spec.tests.forEach(test => {
+            test.results.forEach(result => {
+              arr.push({
+                title: spec.title,
+                status: result.status,
+                error: result.error?.message || '',
+                file: spec.file || '',
+                line: spec.line || '',
+                attachments: result.attachments || []
+              });
+            });
+          });
+        });
+      }
+      if (suites.suites) collectAllTests(suites.suites, arr);
+      return arr;
+    }
+
+    const allTests = collectAllTests(result.suites);
+    const counts = { passed: 0, failed: 0, skipped: 0 };
+    allTests.forEach(t => {
+      if (t.status === 'passed') counts.passed++;
+      if (t.status === 'failed') counts.failed++;
+      if (t.status === 'skipped') counts.skipped++;
+    });
+
+    const failedTests = allTests.filter(t => t.status === 'failed');
+    const passedTests = allTests.filter(t => t.status === 'passed');
+
+    // Build the message
+    let messageText = `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
+
+    if (failedTests.length > 0) {
+      messageText += `\n**❌ Failed Tests:**\n`;
+      messageText += failedTests.map(f => {
+        let msg = `**${f.title}**\nFile: ${f.file}:${f.line}\nError: ${f.error}`;
+        // Separate screenshots and logs
+        const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
+        const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
+        if (screenshots.length > 0) {
+          msg += `\nScreenshots: ${screenshots.map(s => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
+        }
+        if (logs.length > 0) {
+          msg += `\nLogs: ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
+        }
+        return msg;
+      }).join('\n\n');
+    } else {
+      messageText += `\n✅ All tests passed!`;
+    }
+
+    if (passedTests.length > 0) {
+      messageText += `\n\n**✅ Passed Tests:**\n`;
+      messageText += passedTests.map(f => {
+        let msg = `**${f.title}**\nFile: ${f.file}:${f.line}`;
+        return msg;
+      }).join('\n\n');
+    }
+
+    const message = {
+      "@type": "MessageCard",
+      "@context": "http://schema.org/extensions",
+      "themeColor": failedTests.length > 0 ? "FF0000" : "00FF00",
+      "summary": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
+      "title": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
+      "text": messageText,
     };
 
-    if (hasFailed(result)) {
-      const message = {
-        "@type": "MessageCard",
-        "@context": "http://schema.org/extensions",
-        "themeColor": "FF0000",
-        "summary": "Playwright Test Failures",
-        "title": "Playwright Test Failures",
-        "text": "Some Playwright tests have failed. Please check the report.",
-      };
+    // Use global fetch if available, otherwise fallback to node-fetch
+    let fetchFn = typeof fetch === 'function'
+      ? fetch
+      : (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
-      // Use global fetch if available, otherwise fallback to node-fetch
-      let fetchFn = typeof fetch === 'function'
-        ? fetch
-        : (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
-
-      try {
-        const response = await fetchFn(webhookUrl, {
-          method: 'POST',
-          body: JSON.stringify(message),
-          headers: { 'Content-Type': 'application/json' }
-        });
-        if (response.ok) {
-          console.log('✅ Teams notification sent successfully');
-        } else {
-          console.error('❌ Failed to send Teams notification:', response.status, response.statusText);
-        }
-      } catch (error) {
-        console.error('❌ Error sending Teams notification:', error);
+    try {
+      console.log('DEBUG: Sending Teams notification...');
+      const response = await fetchFn(webhookUrl, {
+        method: 'POST',
+        body: JSON.stringify(message),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log('DEBUG: Teams response status:', response.status);
+      if (response.ok) {
+        console.log('✅ Teams notification sent successfully');
+      } else {
+        console.error('❌ Failed to send Teams notification:', response.status, response.statusText);
+        const text = await response.text();
+        console.error('❌ Teams response body:', text);
       }
-    } else {
-      console.log('✅ All tests passed, no Teams alert sent.');
+    } catch (error) {
+      console.error('❌ Error sending Teams notification:', error);
     }
   }
 }
