@@ -1,0 +1,38 @@
+{
+  "name": "fur-refer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:fur4": "playwright test tests/fur4-main-site.spec.ts",
+    "test:refer": "playwright test tests/fur4-referral-site.spec.ts",
+    "test:all": "playwright test tests/fur4-*.spec.ts",
+    "test:critical": "playwright test tests/fur4-critical-flows.spec.ts",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "report": "playwright show-report",
+    "install-browsers": "playwright install",
+    "test:daily": "npm run test:all -- --reporter=html,json,junit",
+    "monitor:single": "ts-node tests/real-time-monitor.ts single",
+    "monitor:continuous": "ts-node tests/real-time-monitor.ts continuous",
+    "monitor:start": "npm run monitor:continuous 5"
+  },
+  "keywords": [
+    "playwright",
+    "testing",
+    "automation",
+    "fur4"
+  ],
+  "author": "",
+  "license": "ISC",
+  "description": "Automated Playwright tests for FUR4.com and refer.fur4.com guest-facing areas",
+  "devDependencies": {
+    "@playwright/test": "^1.53.2",
+    "@types/node": "^24.0.10",
+    "dotenv": "^17.0.1",
+    "ts-node": "^10.9.2"
+  },
+  "dependencies": {
+    "node-fetch": "^3.3.2"
+  }
+}
