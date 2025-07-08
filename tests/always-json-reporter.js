@@ -121,31 +121,37 @@ class AlwaysJsonReporter {
       htmlReportLink = `\n\n[View HTML Report](${htmlReportPath})`;
     }
 
-    // --- Notification Design ---
+    // --- Enhanced Notification Design ---
     const total = counts.passed + counts.failed + counts.skipped;
     const duration = process.env.TEST_START_TIME ? `${Math.round((Date.now() - new Date(process.env.TEST_START_TIME).getTime()) / 1000)}s` : '';
     const publicReportUrl = 'http://54.215.243.212/reports/latest/index.html';
+    const testDate = process.env.TEST_START_TIME ? new Date(process.env.TEST_START_TIME).toLocaleString() : new Date().toLocaleString();
+    const passPercent = total > 0 ? ((counts.passed / total) * 100).toFixed(1) : '0.0';
 
     const message = {
       "@type": "MessageCard",
       "@context": "http://schema.org/extensions",
       "themeColor": failedTests.length > 0 ? "FF0000" : "00FF00",
-      "summary": "🟢 Testing Now Prod",
-      "title": "🟢 Testing Now Prod",
+      "summary": `🟢 Testing Now Prod | ${testDate}`,
+      "title": `🟢 Testing Now Prod`,
       "sections": [
         {
-          "activityTitle": "🟢 Testing Now Prod",
+          "activityTitle": `🟢 Testing Now Prod` + (failedTests.length === 0 ? ' - All Green!' : ' - Issues Detected'),
+          "activitySubtitle": `Test Date: ${testDate}`,
           "facts": [
             { "name": "✅ Passed", "value": String(counts.passed) },
             { "name": "❌ Failed", "value": String(counts.failed) },
             { "name": "⏭️ Skipped", "value": String(counts.skipped) },
             { "name": "🧮 Total", "value": String(total) },
-            { "name": "⏱️ Duration", "value": duration }
+            { "name": "⏱️ Duration", "value": duration },
+            { "name": "📅 Date", "value": testDate },
+            { "name": "📊 Pass %", "value": `${passPercent}%` }
           ],
           "markdown": true
         },
         failedTests.length > 0 ? {
           "activityTitle": "❌ Failed Tests",
+          "activitySubtitle": `Showing ${failedTests.length} failure(s) below`,
           "facts": failedTests.map(f => ({
             "name": f.title,
             "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}${(f.attachments||[]).filter(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path).length ? `\n[Screenshot](${publicReportUrl.replace('index.html', '') + f.attachments.find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path)?.path.split('/').pop()})` : ''}`
