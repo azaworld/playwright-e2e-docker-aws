@@ -16,7 +16,8 @@
     "monitor:single": "ts-node tests/real-time-monitor.ts single",
     "monitor:continuous": "ts-node tests/real-time-monitor.ts continuous",
     "monitor:start": "npm run monitor:continuous 5",
-    "test:teams": "SEND_TEAMS=true npx playwright test"
+    "test:teams": "SEND_TEAMS=true npx playwright test",
+    "test:teams:full": "npm run test:teams && node upload-report-to-server.js"
   },
   "keywords": [
     "playwright",

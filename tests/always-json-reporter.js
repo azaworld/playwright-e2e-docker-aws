@@ -121,13 +121,47 @@ class AlwaysJsonReporter {
       htmlReportLink = `\n\n[View HTML Report](${htmlReportPath})`;
     }
 
+    // --- Notification Design ---
+    const total = counts.passed + counts.failed + counts.skipped;
+    const duration = process.env.TEST_START_TIME ? `${Math.round((Date.now() - new Date(process.env.TEST_START_TIME).getTime()) / 1000)}s` : '';
+    const publicReportUrl = 'http://54.215.243.212/reports/latest/index.html';
+
     const message = {
       "@type": "MessageCard",
       "@context": "http://schema.org/extensions",
       "themeColor": failedTests.length > 0 ? "FF0000" : "00FF00",
-      "summary": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
-      "title": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
-      "text": messageText + htmlReportLink,
+      "summary": "🟢 Testing Now Prod",
+      "title": "🟢 Testing Now Prod",
+      "sections": [
+        {
+          "activityTitle": "🟢 Testing Now Prod",
+          "facts": [
+            { "name": "✅ Passed", "value": String(counts.passed) },
+            { "name": "❌ Failed", "value": String(counts.failed) },
+            { "name": "⏭️ Skipped", "value": String(counts.skipped) },
+            { "name": "🧮 Total", "value": String(total) },
+            { "name": "⏱️ Duration", "value": duration }
+          ],
+          "markdown": true
+        },
+        failedTests.length > 0 ? {
+          "activityTitle": "❌ Failed Tests",
+          "facts": failedTests.map(f => ({
+            "name": f.title,
+            "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}${(f.attachments||[]).filter(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path).length ? `\n[Screenshot](${publicReportUrl.replace('index.html', '') + f.attachments.find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path)?.path.split('/').pop()})` : ''}`
+          })),
+          "markdown": true
+        } : null
+      ].filter(Boolean),
+      "potentialAction": [
+        {
+          "@type": "OpenUri",
+          "name": "View Detailed Report",
+          "targets": [
+            { "os": "default", "uri": publicReportUrl }
+          ]
+        }
+      ]
     };
 
     // Use global fetch if available, otherwise fallback to node-fetch
