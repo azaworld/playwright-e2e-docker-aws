@@ -40,11 +40,11 @@ collect(report.suites);
 const counts = { passed: 0, failed: 0, skipped: 0 };
 allTests.forEach(t => {
   if (t.status === 'passed') counts.passed++;
-  if (t.status === 'failed') counts.failed++;
-  if (t.status === 'skipped') counts.skipped++;
+  else if (t.status === 'skipped') counts.skipped++;
+  else counts.failed++;
 });
 
-const failedTests = allTests.filter(t => t.status === 'failed');
+const failedTests = allTests.filter(t => t.status !== 'passed' && t.status !== 'skipped');
 const passedTests = allTests.filter(t => t.status === 'passed');
 
 // Add HTML report link at the top
@@ -59,7 +59,7 @@ let messageText = htmlReportLink + `**Test Results**\n- Passed: ${counts.passed}
 if (failedTests.length > 0) {
   messageText += `\n**❌ Failed Tests:**\n`;
   messageText += failedTests.map(f => {
-    let msg = `---\n**${f.title}**\nFile: \`${f.file}:${f.line}\`\n**Error:** \`${f.error}\``;
+    let msg = `---\n**${f.title}**\nFile: \`${f.file}:${f.line}\`\nStatus: \`${f.status}\`\n**Error:** \`${f.error}\``;
     const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
     const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
     if (screenshots.length > 0) {

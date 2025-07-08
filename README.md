@@ -38,7 +38,7 @@ Create a `.env` file in the root directory:
 
 ```env
 # Teams webhook URL for notifications (optional)
-TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/f09d8313-dfc5-42ef-b415-94fdfed4c2fe@7c371ac5-901e-4979-be25-cf17d828f722/IncomingWebhook/79bc773885504f31822e94cb119034ed/c5972fa6-0086-47d8-a1b1-612941007b65/V2ookp-hy7EeJ1_-G0WzuBPFGZ5MJ8UxFFctCv-T8dhrA1
+TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/....
 
 # Test configuration
 TEST_TIMEOUT=60000
@@ -132,7 +132,7 @@ The test suite automatically sends notifications to Microsoft Teams when tests c
 3. Copy the webhook URL
 4. Add to your `.env` file:
    ```env
-   TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/f09d8313-dfc5-42ef-b415-94fdfed4c2fe@7c371ac5-901e-4979-be25-cf17d828f722/IncomingWebhook/79bc773885504f31822e94cb119034ed/c5972fa6-0086-47d8-a1b1-612941007b65/V2ookp-hy7EeJ1_-G0WzuBPFGZ5MJ8UxFFctCv-T8dhrA1
+   TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/
    ```
 
 ### Notification Features
