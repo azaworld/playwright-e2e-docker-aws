@@ -15,7 +15,8 @@
     "test:daily": "npm run test:all -- --reporter=html,json,junit",
     "monitor:single": "ts-node tests/real-time-monitor.ts single",
     "monitor:continuous": "ts-node tests/real-time-monitor.ts continuous",
-    "monitor:start": "npm run monitor:continuous 5"
+    "monitor:start": "npm run monitor:continuous 5",
+    "test:teams": "SEND_TEAMS=true npx playwright test"
   },
   "keywords": [
     "playwright",

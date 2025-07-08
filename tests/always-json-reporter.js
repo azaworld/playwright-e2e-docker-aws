@@ -33,13 +33,16 @@ class AlwaysJsonReporter {
           for (const spec of suite.specs) {
             for (const test of spec.tests) {
               for (const result of test.results) {
+                // Treat any non-passed status as a failure for reporting
+                const isFailure = result.status !== 'passed' && result.status !== 'skipped';
                 allTests.push({
                   title: spec.title,
                   file: spec.file,
                   line: spec.line,
                   status: result.status,
-                  error: result.error?.message || '',
-                  attachments: result.attachments || []
+                  error: result.error?.message || (result.errors && result.errors[0]?.message) || '',
+                  attachments: result.attachments || [],
+                  isFailure
                 });
               }
             }
@@ -52,11 +55,12 @@ class AlwaysJsonReporter {
     const counts = { passed: 0, failed: 0, skipped: 0 };
     allTests.forEach(t => {
       if (t.status === 'passed') counts.passed++;
-      if (t.status === 'failed') counts.failed++;
-      if (t.status === 'skipped') counts.skipped++;
+      else if (t.status === 'skipped') counts.skipped++;
+      else counts.failed++;
     });
 
-    const failedTests = allTests.filter(t => t.status === 'failed');
+    // Include all failures, not just 'failed' but also 'timedOut', 'unexpected', etc.
+    const failedTests = allTests.filter(t => t.isFailure);
     const passedTests = allTests.filter(t => t.status === 'passed');
 
     let messageText = `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
@@ -64,7 +68,7 @@ class AlwaysJsonReporter {
     if (failedTests.length > 0) {
       messageText += `\n**❌ Failed Tests:**\n`;
       messageText += failedTests.map(f => {
-        let msg = `**${f.title}**\nFile: ${f.file}:${f.line}\nError: ${f.error}`;
+        let msg = `**${f.title}**\nFile: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}`;
         const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
         const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
         if (screenshots.length > 0) {
@@ -92,6 +96,9 @@ class AlwaysJsonReporter {
     console.log('DEBUG: Failed tests:', JSON.stringify(failedTests, null, 2));
     console.log('DEBUG: Passed tests:', JSON.stringify(passedTests, null, 2));
     console.log('DEBUG: Message text preview:\n', messageText);
+    if (counts.failed !== failedTests.length) {
+      console.warn(`WARNING: Failed test count (${counts.failed}) does not match failed test details (${failedTests.length}). Some failures may not be listed.`);
+    }
 
     // Only send to Teams if SEND_TEAMS env var is set to 'true'
     if (process.env.SEND_TEAMS !== 'true') {
