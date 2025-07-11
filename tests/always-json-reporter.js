@@ -121,10 +121,11 @@ class AlwaysJsonReporter {
       htmlReportLink = `\n\n[View HTML Report](${htmlReportPath})`;
     }
 
+    const FIREBASE_BASE_URL = 'https://fur4-auto-reports.web.app/';
     // --- Enhanced Notification Design ---
     const total = counts.passed + counts.failed + counts.skipped;
     const duration = process.env.TEST_START_TIME ? `${Math.round((Date.now() - new Date(process.env.TEST_START_TIME).getTime()) / 1000)}s` : '';
-    const publicReportUrl = 'http://54.215.243.212/reports/latest/index.html';
+    const publicReportUrl = FIREBASE_BASE_URL + 'index.html';
     const testDate = process.env.TEST_START_TIME ? new Date(process.env.TEST_START_TIME).toLocaleString() : new Date().toLocaleString();
     const passPercent = total > 0 ? ((counts.passed / total) * 100).toFixed(1) : '0.0';
 
@@ -154,7 +155,7 @@ class AlwaysJsonReporter {
           "activitySubtitle": `Showing ${failedTests.length} failure(s) below`,
           "facts": failedTests.map(f => ({
             "name": f.title,
-            "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}${(f.attachments||[]).filter(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path).length ? `\n[Screenshot](${publicReportUrl.replace('index.html', '') + f.attachments.find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path)?.path.split('/').pop()})` : ''}`
+            "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}${(f.attachments||[]).filter(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path).length ? `\n[Screenshot](${FIREBASE_BASE_URL + (f.attachments.find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path)?.path.replace(/^.*data\//, 'data/'))})` : ''}`
           })),
           "markdown": true
         } : null
