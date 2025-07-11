@@ -129,34 +129,53 @@ class AlwaysJsonReporter {
     const testDate = process.env.TEST_START_TIME ? new Date(process.env.TEST_START_TIME).toLocaleString() : new Date().toLocaleString();
     const passPercent = total > 0 ? ((counts.passed / total) * 100).toFixed(1) : '0.0';
 
+    // Dynamic title and intro
+    const hasFailures = failedTests.length > 0;
+    const mainTitle = hasFailures ? '**🟢 Testing Now Prod - Issues Detected**' : '**🟢 Testing Now Prod - All Green!**';
+    const introMsg = hasFailures
+      ? `\n\n**❗ Issues detected in this run. Please review the failures below.**\n\n`
+      : `\n\n✅ All tests passed. No issues detected.\n\n`;
+
+    // Add a bold, clickable Markdown link for the report above the button
+    const reportMarkdownLink = `**[🔎 View Detailed HTML Report](${publicReportUrl})**\n\n`;
+
     const message = {
       "@type": "MessageCard",
       "@context": "http://schema.org/extensions",
-      "themeColor": failedTests.length > 0 ? "FF0000" : "00FF00",
-      "summary": `🟢 Testing Now Prod | ${testDate}`,
-      "title": `🟢 Testing Now Prod`,
+      "themeColor": hasFailures ? "FF0000" : "00FF00",
+      "summary": mainTitle.replace(/\*\*/g, ''),
+      "title": mainTitle.replace(/\*\*/g, ''),
       "sections": [
         {
-          "activityTitle": `🟢 Testing Now Prod` + (failedTests.length === 0 ? ' - All Green!' : ' - Issues Detected'),
+          "activityTitle": mainTitle,
           "activitySubtitle": `Test Date: ${testDate}`,
-          "facts": [
-            { "name": "✅ Passed", "value": String(counts.passed) },
-            { "name": "❌ Failed", "value": String(counts.failed) },
-            { "name": "⏭️ Skipped", "value": String(counts.skipped) },
-            { "name": "🧮 Total", "value": String(total) },
-            { "name": "⏱️ Duration", "value": duration },
-            { "name": "📅 Date", "value": testDate },
-            { "name": "📊 Pass %", "value": `${passPercent}%` }
-          ],
+          "text": reportMarkdownLink + introMsg +
+            `**Test Results**\n\n` +
+            `- **✅ Passed:** ${counts.passed}\n` +
+            `- **❌ Failed:** ${counts.failed}\n` +
+            `- **⏭️ Skipped:** ${counts.skipped}\n` +
+            `- **🧮 Total:** ${total}\n` +
+            `- **⏱️ Duration:** ${duration}\n` +
+            `- **📅 Date:** ${testDate}\n` +
+            `- **📊 Pass %:** ${passPercent}%\n\n`,
           "markdown": true
         },
-        failedTests.length > 0 ? {
-          "activityTitle": "❌ Failed Tests",
-          "activitySubtitle": `Showing ${failedTests.length} failure(s) below`,
-          "facts": failedTests.map(f => ({
-            "name": f.title,
-            "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}${(f.attachments||[]).filter(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path).length ? `\n[Screenshot](${FIREBASE_BASE_URL + (f.attachments.find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path)?.path.replace(/^.*data\//, 'data/'))})` : ''}`
-          })),
+        hasFailures ? {
+          "activityTitle": "**❌ Failed Tests**",
+          "activitySubtitle": `Showing ${failedTests.length} failure(s) below` + '\n',
+          "facts": failedTests.map(f => {
+            // Only use the filename for screenshot links
+            const screenshotAttachment = (f.attachments||[]).find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path);
+            let screenshotUrl = '';
+            if (screenshotAttachment && screenshotAttachment.path) {
+              const filename = screenshotAttachment.path.split(/[\\/]/).pop();
+              screenshotUrl = `${FIREBASE_BASE_URL}data/${filename}`;
+            }
+            return {
+              "name": f.title,
+              "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}` + (screenshotUrl ? `\n[Screenshot](${screenshotUrl})` : '')
+            };
+          }),
           "markdown": true
         } : null
       ].filter(Boolean),
