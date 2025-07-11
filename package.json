@@ -17,7 +17,7 @@
     "monitor:continuous": "ts-node tests/real-time-monitor.ts continuous",
     "monitor:start": "npm run monitor:continuous 5",
     "test:teams": "SEND_TEAMS=true npx playwright test",
-    "test:teams:full": "npm run test:teams && node upload-report-to-server.js"
+    "test:teams:full": "npm run test:teams && firebase deploy --only hosting"
   },
   "keywords": [
     "playwright",
@@ -35,6 +35,7 @@
     "ts-node": "^10.9.2"
   },
   "dependencies": {
-    "node-fetch": "^3.3.2"
+    "node-fetch": "^3.3.2",
+    "ssh2-sftp-client": "^12.0.1"
   }
 }

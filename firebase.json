@@ -1,0 +1,10 @@
+{
+  "hosting": {
+    "public": "playwright-report",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  }
+}

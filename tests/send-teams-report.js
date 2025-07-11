@@ -47,12 +47,9 @@ allTests.forEach(t => {
 const failedTests = allTests.filter(t => t.status !== 'passed' && t.status !== 'skipped');
 const passedTests = allTests.filter(t => t.status === 'passed');
 
+const FIREBASE_BASE_URL = 'https://fur4-auto-reports.web.app/';
 // Add HTML report link at the top
-let htmlReportPath = path.join(process.cwd(), 'playwright-report', 'index.html');
-let htmlReportLink = '';
-if (fs.existsSync(htmlReportPath)) {
-  htmlReportLink = `[View HTML Report](${htmlReportPath})\n\n`;
-}
+let htmlReportLink = `[View HTML Report](${FIREBASE_BASE_URL}index.html)\n\n`;
 
 let messageText = htmlReportLink + `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
 
@@ -63,7 +60,7 @@ if (failedTests.length > 0) {
     const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
     const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
     if (screenshots.length > 0) {
-      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
+      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${FIREBASE_BASE_URL}${s.path.replace(/^.*data\//, 'data/')})`).join(', ')}`;
     }
     if (logs.length > 0) {
       msg += `\n**Logs:** ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
