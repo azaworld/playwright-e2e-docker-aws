@@ -48,8 +48,8 @@ async function uploadDirToS3(localDir, s3Prefix) {
       Bucket: AWS_S3_BUCKET,
       Key: s3Key,
       Body: fileContent,
-      ACL: 'public-read',
-      ContentType: getContentType(filePath)
+      ContentType: getContentType(filePath),
+      ACL: 'public-read' // Ensure public access
     }).promise();
     console.log(`Uploaded: ${s3Key}`);
   }
@@ -71,8 +71,8 @@ function getContentType(filePath) {
     await uploadDirToS3('playwright-report', process.env.AWS_S3_REPORT_PREFIX);
   }
   // Upload screenshots (if any)
-  if (fs.existsSync('test-results')) {
-    await uploadDirToS3('test-results', process.env.AWS_S3_SCREENSHOT_PREFIX);
+  if (fs.existsSync('playwright-report/data')) {
+    await uploadDirToS3('playwright-report/data', process.env.AWS_S3_SCREENSHOT_PREFIX);
   }
   console.log('All uploads complete!');
-})(); 
+})();

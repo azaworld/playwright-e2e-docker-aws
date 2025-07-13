@@ -68,24 +68,13 @@ if (failedTests.length > 0) {
   messageText += failedTests.map(f => {
     let msg = `---\n**${f.title}**\nFile: \`${f.file}:${f.line}\`\nStatus: \`${f.status}\`\n**Error:** \`${f.error}\``;
     const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
-    const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
     if (screenshots.length > 0) {
-      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${screenshotUrl(s.path)})`).join(', ')}`;
-    }
-    if (logs.length > 0) {
-      msg += `\n**Logs:** ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
+      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${screenshotUrl(path.basename(s.path))})`).join(', ')}`;
     }
     return msg;
   }).join('\n\n');
 } else {
   messageText += `\n✅ All tests passed!`;
-}
-
-if (passedTests.length > 0) {
-  messageText += `\n\n**✅ Passed Tests:**\n`;
-  messageText += passedTests.map(f => {
-    return `• **${f.title}** (${f.file}:${f.line})`;
-  }).join('\n');
 }
 
 // In Teams message, add a visually clear button for the report:
@@ -137,4 +126,4 @@ if (!webhookUrl) {
   } catch (error) {
     console.error('❌ Error sending Teams notification:', error);
   }
-})(); 
+})();
