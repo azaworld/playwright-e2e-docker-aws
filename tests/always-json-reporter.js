@@ -11,13 +11,21 @@ class AlwaysJsonReporter {
 
   async onEnd() {
     // Try to read the Playwright JSON report from the most likely locations
-    let jsonReportPath = path.join(process.cwd(), 'test-results', 'playwright-report.json');
+    let jsonReportPath = path.join(process.cwd(), 'test-results', 'results.json');
     if (!fs.existsSync(jsonReportPath)) {
-      jsonReportPath = path.join(process.cwd(), 'playwright-report', 'report.json');
+      jsonReportPath = path.join(process.cwd(), 'test-results', 'playwright-report.json');
     }
+    // Do NOT check playwright-report/report.json anymore
     let report;
     try {
-      report = JSON.parse(fs.readFileSync(jsonReportPath, 'utf-8'));
+      if (fs.existsSync(jsonReportPath)) {
+        report = JSON.parse(fs.readFileSync(jsonReportPath, 'utf-8'));
+        console.log('DEBUG: Found test results at:', jsonReportPath);
+      } else {
+        console.log('DEBUG: No test results file found at any location');
+        console.log('DEBUG: This might mean no tests were executed');
+        return; // Exit gracefully if no results file exists
+      }
     } catch (e) {
       console.error('❌ Could not read Playwright JSON report:', e);
       return;
@@ -122,6 +130,7 @@ class AlwaysJsonReporter {
     }
 
     const FIREBASE_BASE_URL = 'https://fur4-auto-reports.web.app/';
+
     // --- Enhanced Notification Design ---
     const total = counts.passed + counts.failed + counts.skipped;
     const duration = process.env.TEST_START_TIME ? `${Math.round((Date.now() - new Date(process.env.TEST_START_TIME).getTime()) / 1000)}s` : '';
