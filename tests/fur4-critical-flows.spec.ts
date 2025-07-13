@@ -321,7 +321,7 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
         '[class*="coupon"]',
         '[class*="discount"]'
       ];
-      
+      //test added where it's needed
       let foundDiscount = false;
       for (const selector of discountSelectors) {
         const elements = await page.locator(selector).all();
