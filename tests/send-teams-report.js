@@ -1,6 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+console.log('DEBUG ENV:', {
+  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
+  AWS_REGION: process.env.AWS_REGION,
+  AWS_S3_REPORT_PREFIX: process.env.AWS_S3_REPORT_PREFIX,
+  AWS_S3_SCREENSHOT_PREFIX: process.env.AWS_S3_SCREENSHOT_PREFIX
+});
 
 const jsonReportPath = path.join(process.cwd(), 'test-results', 'playwright-report.json');
 let report;
@@ -47,9 +53,13 @@ allTests.forEach(t => {
 const failedTests = allTests.filter(t => t.status !== 'passed' && t.status !== 'skipped');
 const passedTests = allTests.filter(t => t.status === 'passed');
 
-const FIREBASE_BASE_URL = 'https://fur4-auto-reports.web.app/';
+// S3 URL helpers
+const reportUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_REPORT_PREFIX}/index.html`;
+const screenshotUrl = (filename) =>
+  `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_SCREENSHOT_PREFIX}/${filename}`;
+
 // Add HTML report link at the top
-let htmlReportLink = `[View HTML Report](${FIREBASE_BASE_URL}index.html)\n\n`;
+let htmlReportLink = `[View HTML Report](${reportUrl})\n\n`;
 
 let messageText = htmlReportLink + `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
 
@@ -60,7 +70,7 @@ if (failedTests.length > 0) {
     const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
     const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
     if (screenshots.length > 0) {
-      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${FIREBASE_BASE_URL}${s.path.replace(/^.*data\//, 'data/')})`).join(', ')}`;
+      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${screenshotUrl(s.path)})`).join(', ')}`;
     }
     if (logs.length > 0) {
       msg += `\n**Logs:** ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
@@ -78,6 +88,7 @@ if (passedTests.length > 0) {
   }).join('\n');
 }
 
+// In Teams message, add a visually clear button for the report:
 const message = {
   "@type": "MessageCard",
   "@context": "http://schema.org/extensions",
@@ -85,6 +96,15 @@ const message = {
   "summary": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
   "title": failedTests.length > 0 ? "Playwright Test Failures" : "Playwright All Tests Passed",
   "text": messageText,
+  "potentialAction": [
+    {
+      "@type": "OpenUri",
+      "name": failedTests.length > 0 ? "🔴 View Latest Test Report" : "🟢 View Latest Test Report",
+      "targets": [
+        { "os": "default", "uri": reportUrl }
+      ]
+    }
+  ]
 };
 
 // Use global fetch if available, otherwise fallback to node-fetch

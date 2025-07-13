@@ -1738,3 +1738,31 @@
 > fur-refer@1.0.0 test:teams:full
 > npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
 
+2025-07-13T09:15:00: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+
+2025-07-13T09:30:00: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+
+2025-07-13T10:08:40: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+
+2025-07-13T10:20:07: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+
+2025-07-13T11:05:12: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+
+2025-07-13T11:15:00: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+
+2025-07-13T11:36:53: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+

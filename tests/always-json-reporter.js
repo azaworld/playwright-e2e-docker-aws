@@ -1,6 +1,12 @@
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+console.log('DEBUG ENV:', {
+  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
+  AWS_REGION: process.env.AWS_REGION,
+  AWS_S3_REPORT_PREFIX: process.env.AWS_S3_REPORT_PREFIX,
+  AWS_S3_SCREENSHOT_PREFIX: process.env.AWS_S3_SCREENSHOT_PREFIX
+});
 
 console.log('✅ AlwaysJsonReporter loaded');
 
@@ -109,10 +115,11 @@ class AlwaysJsonReporter {
     }
 
     // Only send to Teams if SEND_TEAMS env var is set to 'true'
-    if (process.env.SEND_TEAMS !== 'true') {
-      console.log('DEBUG: SEND_TEAMS is not set to "true". Skipping Teams notification.');
-      return;
-    }
+    // Remove the following lines:
+    // if (process.env.SEND_TEAMS !== 'true') {
+    //   console.log('DEBUG: SEND_TEAMS is not set to "true". Skipping Teams notification.');
+    //   return;
+    // }
 
     // Teams webhook
     const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
@@ -129,31 +136,33 @@ class AlwaysJsonReporter {
       htmlReportLink = `\n\n[View HTML Report](${htmlReportPath})`;
     }
 
-    const FIREBASE_BASE_URL = 'https://fur4-auto-reports.web.app/';
+    // S3 URL helpers (declare only once)
+    const reportUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_REPORT_PREFIX}/index.html`;
+    const screenshotUrl = (filename) =>
+      `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_SCREENSHOT_PREFIX}/${filename}`;
 
     // --- Enhanced Notification Design ---
     const total = counts.passed + counts.failed + counts.skipped;
     const duration = process.env.TEST_START_TIME ? `${Math.round((Date.now() - new Date(process.env.TEST_START_TIME).getTime()) / 1000)}s` : '';
-    const publicReportUrl = FIREBASE_BASE_URL + 'index.html';
     const testDate = process.env.TEST_START_TIME ? new Date(process.env.TEST_START_TIME).toLocaleString() : new Date().toLocaleString();
     const passPercent = total > 0 ? ((counts.passed / total) * 100).toFixed(1) : '0.0';
 
     // Dynamic title and intro
     const hasFailures = failedTests.length > 0;
-    const mainTitle = hasFailures ? '**🟢 Testing Now Prod - Issues Detected**' : '**🟢 Testing Now Prod - All Green!**';
+    const mainTitle = hasFailures ? '**🟢 Testing Report Prod - Issues Detected**' : '**🟢 Testing Now Prod - All Green!**';
     const introMsg = hasFailures
       ? `\n\n**❗ Issues detected in this run. Please review the failures below.**\n\n`
       : `\n\n✅ All tests passed. No issues detected.\n\n`;
 
     // Add a bold, clickable Markdown link for the report above the button
-    const reportMarkdownLink = `**[🔎 View Detailed HTML Report](${publicReportUrl})**\n\n`;
+    const reportMarkdownLink = `**[🔎 View Detailed HTML Report](${reportUrl})**\n\n`;
 
     const message = {
       "@type": "MessageCard",
       "@context": "http://schema.org/extensions",
       "themeColor": hasFailures ? "FF0000" : "00FF00",
-      "summary": mainTitle.replace(/\*\*/g, ''),
-      "title": mainTitle.replace(/\*\*/g, ''),
+      "summary": hasFailures ? "Playwright Test Failures" : "Playwright All Tests Passed",
+      "title": hasFailures ? "Playwright Test Failures" : "Playwright All Tests Passed",
       "sections": [
         {
           "activityTitle": mainTitle,
@@ -175,14 +184,14 @@ class AlwaysJsonReporter {
           "facts": failedTests.map(f => {
             // Only use the filename for screenshot links
             const screenshotAttachment = (f.attachments||[]).find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path);
-            let screenshotUrl = '';
+            let screenshotLink = '';
             if (screenshotAttachment && screenshotAttachment.path) {
               const filename = screenshotAttachment.path.split(/[\\/]/).pop();
-              screenshotUrl = `${FIREBASE_BASE_URL}data/${filename}`;
+              screenshotLink = screenshotUrl(filename);
             }
             return {
               "name": f.title,
-              "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}` + (screenshotUrl ? `\n[Screenshot](${screenshotUrl})` : '')
+              "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}` + (screenshotLink ? `\n[Screenshot](${screenshotLink})` : '')
             };
           }),
           "markdown": true
@@ -191,9 +200,9 @@ class AlwaysJsonReporter {
       "potentialAction": [
         {
           "@type": "OpenUri",
-          "name": "View Detailed Report",
+          "name": hasFailures ? "🔴 View Latest Test Report" : "🟢 View Latest Test Report",
           "targets": [
-            { "os": "default", "uri": publicReportUrl }
+            { "os": "default", "uri": reportUrl }
           ]
         }
       ]

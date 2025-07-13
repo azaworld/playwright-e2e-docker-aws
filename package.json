@@ -23,7 +23,8 @@
     "docker:compose:up": "docker-compose up -d",
     "docker:compose:down": "docker-compose down",
     "docker:compose:logs": "docker-compose logs -f",
-    "deploy:aws": "chmod +x deploy.sh && ./deploy.sh"
+    "deploy:aws": "chmod +x deploy.sh && ./deploy.sh",
+    "test:ci": "npx playwright test && npx playwright show-report && node upload-playwright-report-to-s3.js && node tests/send-teams-report.js"
   },
   "keywords": [
     "playwright",
@@ -37,10 +38,11 @@
   "devDependencies": {
     "@playwright/test": "^1.53.2",
     "@types/node": "^24.0.10",
-    "dotenv": "^17.0.1",
+    "dotenv": "^17.2.0",
     "ts-node": "^10.9.2"
   },
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "node-fetch": "^3.3.2",
     "ssh2-sftp-client": "^12.0.1"
   }
