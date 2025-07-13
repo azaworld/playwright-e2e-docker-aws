@@ -17,6 +17,7 @@ services:
     restart: unless-stopped
     networks:
       - playwright-network
+    command: npm run test:ci
 
   # PM2 process manager for scheduling
   pm2-scheduler:

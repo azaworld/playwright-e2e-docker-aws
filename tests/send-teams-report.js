@@ -69,7 +69,7 @@ if (failedTests.length > 0) {
     let msg = `---\n**${f.title}**\nFile: \`${f.file}:${f.line}\`\nStatus: \`${f.status}\`\n**Error:** \`${f.error}\``;
     const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
     if (screenshots.length > 0) {
-      msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${screenshotUrl(path.basename(s.path))})`).join(', ')}`;
+      // msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${screenshotUrl(path.basename(s.path))})`).join(', ')}`;
     }
     return msg;
   }).join('\n\n');

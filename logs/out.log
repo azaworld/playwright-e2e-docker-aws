@@ -1766,3 +1766,11 @@
 > fur-refer@1.0.0 test:teams:full
 > npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
 
+2025-07-13T19:41:39: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+
+2025-07-13T19:45:00: 
+> fur-refer@1.0.0 test:teams:full
+> npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN
+

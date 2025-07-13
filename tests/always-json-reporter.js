@@ -86,7 +86,7 @@ class AlwaysJsonReporter {
         const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
         const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
         if (screenshots.length > 0) {
-          msg += `\nScreenshots: ${screenshots.map(s => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
+          // msg += `\nScreenshots: ${screenshots.map(s => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
         }
         if (logs.length > 0) {
           msg += `\nLogs: ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
@@ -187,11 +187,11 @@ class AlwaysJsonReporter {
             let screenshotLink = '';
             if (screenshotAttachment && screenshotAttachment.path) {
               const filename = screenshotAttachment.path.split(/[\\/]/).pop();
-              screenshotLink = screenshotUrl(filename);
+              // screenshotLink = screenshotUrl(filename);
             }
             return {
               "name": f.title,
-              "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}` + (screenshotLink ? `\n[Screenshot](${screenshotLink})` : '')
+              "value": `File: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}` // + (screenshotLink ? `\n[Screenshot](${screenshotLink})` : '')
             };
           }),
           "markdown": true

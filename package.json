@@ -17,7 +17,7 @@
     "monitor:continuous": "ts-node tests/real-time-monitor.ts continuous",
     "monitor:start": "npm run monitor:continuous 5",
     "test:teams": "SEND_TEAMS=true npx playwright test",
-    "test:teams:full": "npm run test:teams && npx playwright show-report && firebase deploy --only hosting --token $FIREBASE_TOKEN",
+    "test:teams:full": "npm run test:teams && npx playwright show-report && node upload-playwright-report-to-s3.js",
     "docker:build": "docker build -t fur4-playwright-tests .",
     "docker:run": "docker run --rm -e TEAMS_WEBHOOK_URL=$TEAMS_WEBHOOK_URL fur4-playwright-tests",
     "docker:compose:up": "docker-compose up -d",
