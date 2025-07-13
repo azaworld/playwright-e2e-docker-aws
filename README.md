@@ -44,6 +44,88 @@ TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/....
 TEST_TIMEOUT=60000
 ```
 
+## 🐳 Docker Deployment
+
+### Local Docker Setup
+
+```bash
+# Build Docker image
+npm run docker:build
+
+# Run tests in Docker
+npm run docker:run
+
+# Or use Docker Compose
+npm run docker:compose:up
+npm run docker:compose:logs
+```
+
+### AWS Server Deployment
+
+The project is fully containerized and ready for AWS deployment with automated scheduling.
+
+#### Prerequisites
+- AWS EC2 instance (Ubuntu 20.04+ recommended)
+- SSH access to the server
+- Docker and Docker Compose (installed automatically by deploy script)
+
+#### Quick Deployment
+
+```bash
+# 1. Ensure your .env file is configured
+echo "TEAMS_WEBHOOK_URL=your_webhook_url" > .env
+
+# 2. Run the deployment script
+npm run deploy:aws
+```
+
+#### Manual Deployment Steps
+
+```bash
+# 1. SSH to your AWS server
+ssh arifuz@54.215.243.212
+
+# 2. Create project directory
+mkdir -p ~/fur4-playwright
+cd ~/fur4-playwright
+
+# 3. Copy project files (from your local machine)
+scp -r . arifuz@54.215.243.212:~/fur4-playwright/
+
+# 4. Build and start containers
+docker-compose build
+docker-compose up -d
+
+# 5. Set up PM2 for scheduling
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+#### Server Configuration
+
+- **Server IP:** 54.215.243.212
+- **Username:** arifuz
+- **Port:** 22
+- **Test Schedule:** Every 15 minutes
+- **Logs:** `/home/arifuz/fur4-playwright/logs/`
+
+#### Monitoring Commands
+
+```bash
+# View container logs
+ssh arifuz@54.215.243.212 'cd ~/fur4-playwright && docker-compose logs -f'
+
+# Check PM2 status
+ssh arifuz@54.215.243.212 'pm2 status'
+
+# View PM2 logs
+ssh arifuz@54.215.243.212 'pm2 logs'
+
+# Restart services
+ssh arifuz@54.215.243.212 'cd ~/fur4-playwright && docker-compose restart'
+```
+
 ## 🧪 Running Tests
 
 ### Run All Tests
@@ -248,6 +330,11 @@ tests/
 - Check Teams channel permissions
 - Review console logs for errors
 
+#### Docker Issues
+- Ensure Docker and Docker Compose are installed
+- Check container logs: `docker-compose logs`
+- Verify environment variables are set correctly
+
 ### Debug Mode
 ```bash
 # Run specific test with debug
@@ -255,6 +342,9 @@ npx playwright test tests/fur4-main-site.spec.ts --debug
 
 # Run with headed browser
 npx playwright test --headed
+
+# Debug Docker container
+docker-compose exec playwright-tests bash
 ```
 
 ## 📈 Monitoring

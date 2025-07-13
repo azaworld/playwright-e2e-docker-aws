@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  playwright-tests:
+    build: .
+    container_name: fur4-playwright-tests
+    environment:
+      - NODE_ENV=production
+      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL}
+      - TEST_TIMEOUT=${TEST_TIMEOUT:-60000}
+      - SEND_TEAMS=true
+    volumes:
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+      - ./logs:/app/logs
+      - ./.env:/app/.env
+    restart: unless-stopped
+    networks:
+      - playwright-network
+
+  # PM2 process manager for scheduling
+  pm2-scheduler:
+    build: .
+    container_name: fur4-pm2-scheduler
+    command: >
+      sh -c "
+        npm install -g pm2 &&
+        pm2 start ecosystem.config.js &&
+        pm2 logs
+      "
+    environment:
+      - NODE_ENV=production
+      - TEAMS_WEBHOOK_URL=${TEAMS_WEBHOOK_URL}
+      - TEST_TIMEOUT=${TEST_TIMEOUT:-60000}
+      - SEND_TEAMS=true
+    volumes:
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+      - ./logs:/app/logs
+      - ./ecosystem.config.js:/app/ecosystem.config.js
+      - ./.env:/app/.env
+    restart: unless-stopped
+    networks:
+      - playwright-network
+
+networks:
+  playwright-network:
+    driver: bridge 

@@ -309,7 +309,7 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
 
   test.describe('Discount Code Tests', () => {
     test('discount code application flow is functional', async ({ page }) => {
-      await page.goto('https://fur4.com/', { timeout: 60000 });
+      await page.goto('https://fur4com/', { timeout: 60000 });
       
       // Look for discount/coupon elements
       const discountSelectors = [
