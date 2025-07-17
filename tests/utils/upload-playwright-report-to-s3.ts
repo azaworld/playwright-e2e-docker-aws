@@ -1,13 +1,8 @@
-require('dotenv').config();
-console.log('DEBUG ENV:', {
-  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_S3_REPORT_PREFIX: process.env.AWS_S3_REPORT_PREFIX,
-  AWS_S3_SCREENSHOT_PREFIX: process.env.AWS_S3_SCREENSHOT_PREFIX
-});
-const AWS = require('aws-sdk');
-const fs = require('fs');
-const path = require('path');
+import dotenv from 'dotenv';
+dotenv.config();
+import AWS from 'aws-sdk';
+import fs from 'fs';
+import path from 'path';
 
 const {
   AWS_ACCESS_KEY_ID,
@@ -16,7 +11,7 @@ const {
   AWS_S3_BUCKET,
   AWS_S3_REPORT_PREFIX,
   AWS_S3_SCREENSHOT_PREFIX
-} = process.env;
+} = process.env as Record<string, string>;
 
 AWS.config.update({
   accessKeyId: AWS_ACCESS_KEY_ID,
@@ -26,7 +21,7 @@ AWS.config.update({
 
 const s3 = new AWS.S3();
 
-function walkDir(dir, fileList = []) {
+function walkDir(dir: string, fileList: string[] = []): string[] {
   if (!fs.existsSync(dir)) return fileList;
   fs.readdirSync(dir).forEach(file => {
     const fullPath = path.join(dir, file);
@@ -39,7 +34,7 @@ function walkDir(dir, fileList = []) {
   return fileList;
 }
 
-async function uploadDirToS3(localDir, s3Prefix) {
+async function uploadDirToS3(localDir: string, s3Prefix: string) {
   const files = walkDir(localDir);
   for (const filePath of files) {
     const s3Key = path.join(s3Prefix, path.relative(localDir, filePath)).replace(/\\/g, '/');
@@ -49,13 +44,13 @@ async function uploadDirToS3(localDir, s3Prefix) {
       Key: s3Key,
       Body: fileContent,
       ContentType: getContentType(filePath),
-      ACL: 'public-read' // Ensure public access
+      ACL: 'public-read'
     }).promise();
     console.log(`Uploaded: ${s3Key}`);
   }
 }
 
-function getContentType(filePath) {
+function getContentType(filePath: string): string {
   if (filePath.endsWith('.html')) return 'text/html';
   if (filePath.endsWith('.js')) return 'application/javascript';
   if (filePath.endsWith('.css')) return 'text/css';
@@ -66,13 +61,11 @@ function getContentType(filePath) {
 }
 
 (async () => {
-  // Upload HTML report
   if (fs.existsSync('playwright-report')) {
-    await uploadDirToS3('playwright-report', process.env.AWS_S3_REPORT_PREFIX);
+    await uploadDirToS3('playwright-report', AWS_S3_REPORT_PREFIX);
   }
-  // Upload screenshots (if any)
   if (fs.existsSync('playwright-report/data')) {
-    await uploadDirToS3('playwright-report/data', process.env.AWS_S3_SCREENSHOT_PREFIX);
+    await uploadDirToS3('playwright-report/data', AWS_S3_SCREENSHOT_PREFIX);
   }
   console.log('All uploads complete!');
 })();

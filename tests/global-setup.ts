@@ -18,13 +18,18 @@ async function globalSetup(config: FullConfig) {
     console.warn('⚠️  TEAMS_WEBHOOK_URL not set - Teams notifications will be disabled');
   }
   
+  const FUR4_MAIN_URL = process.env.FUR4_MAIN_URL;
+  const FUR4_REFERRAL_URL = process.env.FUR4_REFERRAL_URL;
+  if (!FUR4_MAIN_URL) throw new Error('FUR4_MAIN_URL is not set in environment variables');
+  if (!FUR4_REFERRAL_URL) throw new Error('FUR4_REFERRAL_URL is not set in environment variables');
+  
   // Test connectivity to both sites before running tests
   const browser = await chromium.launch();
   const page = await browser.newPage();
   
   try {
     console.log('🔍 Testing connectivity to fur4.com...');
-    await page.goto('https://fur4.com/', { timeout: 30000 });
+    await page.goto(FUR4_MAIN_URL, { timeout: 30000 });
     const fur4Title = await page.title();
     console.log(`✅ fur4.com accessible - Title: ${fur4Title}`);
   } catch (error) {
@@ -33,7 +38,7 @@ async function globalSetup(config: FullConfig) {
   
   try {
     console.log('🔍 Testing connectivity to refer.fur4.com...');
-    await page.goto('https://refer.fur4.com/', { timeout: 30000 });
+    await page.goto(FUR4_REFERRAL_URL, { timeout: 30000 });
     const referTitle = await page.title();
     console.log(`✅ refer.fur4.com accessible - Title: ${referTitle}`);
   } catch (error) {

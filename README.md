@@ -306,10 +306,18 @@ crontab -e
 ### Test Structure
 ```
 tests/
-├── fur4-main-site.spec.ts      # Main site tests
-├── fur4-referral-site.spec.ts  # Referral site tests
-├── global-setup.ts             # Test initialization
-└── global-teardown.ts          # Results processing & notifications
+├── fur4-main/                # Main site test suites
+│   ├── fur4-main-site.spec.ts
+│   ├── critical-flows.spec.ts
+├── fur4-referral/            # Referral site test suites
+│   └── fur4-referral-site.spec.ts
+├── utils/                    # Shared utility/helper functions and reporters
+│   ├── helpers.ts
+│   ├── always-json-reporter.ts
+│   ├── always-json-reporter.js
+│   ├── real-time-monitor.ts
+│   └── send-teams-report.ts
+└── fixtures/                 # Test data, mock files, etc. (optional, for future use)
 ```
 
 ## 🐛 Troubleshooting
@@ -369,3 +377,37 @@ docker-compose exec playwright-tests bash
 ## 📝 License
 
 ISC License - see LICENSE file for details. 
+
+## Project Structure
+
+```
+FUR-Refer/
+├── tests/
+│   ├── fur4-main/                # Main site test suites
+│   ├── fur4-referral/            # Referral site test suites
+│   ├── utils/                    # Shared utility/helper functions and reporters
+│   │   ├── helpers.ts
+│   │   ├── always-json-reporter.ts
+│   │   ├── always-json-reporter.js
+│   │   ├── real-time-monitor.ts
+│   │   └── send-teams-report.ts
+│   └── fixtures/                 # Test data, mock files, etc. (optional, for future use)
+├── page-objects/
+│   ├── fur4/                     # Main site page objects
+│   └── refer/                    # Referral site page objects
+├── playwright.config.ts          # Playwright configuration
+├── .env                          # Environment variables
+├── Dockerfile, docker-compose.yml
+├── upload-playwright-report-to-s3.js
+├── tests/send-teams-report.js
+├── test-results/                 # Test output (ignored by git)
+├── playwright-report/            # HTML report output (ignored by git)
+└── ...
+```
+
+- **tests/utils/**: Place any shared helper functions here (e.g., random data generators, custom assertions).
+- **tests/fixtures/**: Place any static test data, mock files, or fixtures here.
+- **page-objects/**: All POM classes, organized by domain.
+- **test-results/** and **playwright-report/**: Output folders, auto-generated.
+
+This structure follows industry best practices for scalable, maintainable Playwright E2E projects. 

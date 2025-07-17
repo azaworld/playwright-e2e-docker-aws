@@ -1,15 +1,10 @@
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
-console.log('DEBUG ENV:', {
-  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_S3_REPORT_PREFIX: process.env.AWS_S3_REPORT_PREFIX,
-  AWS_S3_SCREENSHOT_PREFIX: process.env.AWS_S3_SCREENSHOT_PREFIX
-});
+import fs from 'fs';
+import path from 'path';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const jsonReportPath = path.join(process.cwd(), 'test-results', 'playwright-report.json');
-let report;
+let report: any;
 try {
   report = JSON.parse(fs.readFileSync(jsonReportPath, 'utf-8'));
 } catch (e) {
@@ -18,8 +13,15 @@ try {
 }
 
 // Collect all test results
-const allTests = [];
-function collect(suites) {
+const allTests: Array<{
+  title: string;
+  file: string;
+  line: number;
+  status: string;
+  error: string;
+  attachments: any[];
+}> = [];
+function collect(suites: any[]) {
   if (!suites) return;
   for (const suite of suites) {
     if (suite.suites) collect(suite.suites);
@@ -44,18 +46,18 @@ function collect(suites) {
 collect(report.suites);
 
 const counts = { passed: 0, failed: 0, skipped: 0 };
-allTests.forEach(t => {
+allTests.forEach((t) => {
   if (t.status === 'passed') counts.passed++;
   else if (t.status === 'skipped') counts.skipped++;
   else counts.failed++;
 });
 
-const failedTests = allTests.filter(t => t.status !== 'passed' && t.status !== 'skipped');
-const passedTests = allTests.filter(t => t.status === 'passed');
+const failedTests = allTests.filter((t) => t.status !== 'passed' && t.status !== 'skipped');
+const passedTests = allTests.filter((t) => t.status === 'passed');
 
 // S3 URL helpers
 const reportUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_REPORT_PREFIX}/index.html`;
-const screenshotUrl = (filename) =>
+const screenshotUrl = (filename: string) =>
   `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_SCREENSHOT_PREFIX}/${filename}`;
 
 // Add HTML report link at the top
@@ -65,11 +67,11 @@ let messageText = htmlReportLink + `**Test Results**\n- Passed: ${counts.passed}
 
 if (failedTests.length > 0) {
   messageText += `\n**❌ Failed Tests:**\n`;
-  messageText += failedTests.map(f => {
+  messageText += failedTests.map((f) => {
     let msg = `---\n**${f.title}**\nFile: \`${f.file}:${f.line}\`\nStatus: \`${f.status}\`\n**Error:** \`${f.error}\``;
-    const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
+    const screenshots = (f.attachments || []).filter((a: any) => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
     if (screenshots.length > 0) {
-      // msg += `\n**Screenshots:** ${screenshots.map(s => `[${path.basename(s.path)}](${screenshotUrl(path.basename(s.path))})`).join(', ')}`;
+      // msg += `\n**Screenshots:** ${screenshots.map((s: any) => `[${path.basename(s.path)}](${screenshotUrl(path.basename(s.path))})`).join(', ')}`;
     }
     return msg;
   }).join('\n\n');
@@ -97,9 +99,9 @@ const message = {
 };
 
 // Use global fetch if available, otherwise fallback to node-fetch
-let fetchFn = typeof fetch === 'function'
+let fetchFn: any = typeof fetch === 'function'
   ? fetch
-  : (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+  : (...args: any[]) => import('node-fetch').then(({default: fetch}) => (fetch as any)(...args));
 
 const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
 if (!webhookUrl) {
