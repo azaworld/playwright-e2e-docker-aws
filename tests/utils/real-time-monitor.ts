@@ -197,19 +197,24 @@ class RealTimeMonitor {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
     });
 
+    const FUR4_MAIN_URL = process.env.FUR4_MAIN_URL;
+    const FUR4_REFERRAL_URL = process.env.FUR4_REFERRAL_URL;
+    if (!FUR4_MAIN_URL) throw new Error('FUR4_MAIN_URL is not set in environment variables');
+    if (!FUR4_REFERRAL_URL) throw new Error('FUR4_REFERRAL_URL is not set in environment variables');
+
     const checks = [
-      await this.checkCriticalFlow(page, 'FUR4 Homepage', 'https://fur4.com/', async (p) => {
+      await this.checkCriticalFlow(page, 'FUR4 Homepage', FUR4_MAIN_URL, async (p) => {
         const title = await p.title();
         return { title, loaded: title.length > 0 };
       }),
-      await this.checkCriticalFlow(page, 'FUR4 Login Flow', 'https://fur4.com/', this.checkLoginFlow.bind(this)),
-      await this.checkCriticalFlow(page, 'FUR4 Checkout Flow', 'https://fur4.com/', this.checkCheckoutFlow.bind(this)),
-      await this.checkCriticalFlow(page, 'Referral Homepage', 'https://refer.fur4.com/', async (p) => {
+      await this.checkCriticalFlow(page, 'FUR4 Login Flow', FUR4_MAIN_URL, this.checkLoginFlow.bind(this)),
+      await this.checkCriticalFlow(page, 'FUR4 Checkout Flow', FUR4_MAIN_URL, this.checkCheckoutFlow.bind(this)),
+      await this.checkCriticalFlow(page, 'Referral Homepage', FUR4_REFERRAL_URL, async (p) => {
         const title = await p.title();
         return { title, loaded: title.length > 0 };
       }),
-      await this.checkCriticalFlow(page, 'Referral Claim Flow', 'https://refer.fur4.com/', this.checkReferralFlow.bind(this)),
-      await this.checkCriticalFlow(page, 'API Integrations', 'https://fur4.com/', this.checkAPIIntegrations.bind(this))
+      await this.checkCriticalFlow(page, 'Referral Claim Flow', FUR4_REFERRAL_URL, this.checkReferralFlow.bind(this)),
+      await this.checkCriticalFlow(page, 'API Integrations', FUR4_MAIN_URL, this.checkAPIIntegrations.bind(this))
     ];
 
     await page.close();

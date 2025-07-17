@@ -4,10 +4,10 @@
   "main": "index.js",
   "scripts": {
     "test": "playwright test",
-    "test:fur4": "playwright test tests/fur4-main-site.spec.ts",
-    "test:refer": "playwright test tests/fur4-referral-site.spec.ts",
-    "test:all": "playwright test tests/fur4-*.spec.ts",
-    "test:critical": "playwright test tests/fur4-critical-flows.spec.ts",
+    "test:fur4": "playwright test tests/fur4-main/fur4-main-site.spec.ts",
+    "test:refer": "playwright test tests/fur4-referral/fur4-referral-site.spec.ts",
+    "test:all": "playwright test tests/fur4-main/ tests/fur4-referral/",
+    "test:critical": "playwright test tests/fur4-main/critical-flows.spec.ts",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "report": "playwright show-report",
@@ -17,14 +17,14 @@
     "monitor:continuous": "ts-node tests/real-time-monitor.ts continuous",
     "monitor:start": "npm run monitor:continuous 5",
     "test:teams": "SEND_TEAMS=true npx playwright test",
-    "test:teams:full": "npm run test:teams && npx playwright show-report && node upload-playwright-report-to-s3.js",
+    "test:teams:full": "npm run test:teams && npx playwright show-report && ts-node tests/utils/upload-playwright-report-to-s3.ts",
     "docker:build": "docker build -t fur4-playwright-tests .",
     "docker:run": "docker run --rm -e TEAMS_WEBHOOK_URL=$TEAMS_WEBHOOK_URL fur4-playwright-tests",
     "docker:compose:up": "docker-compose up -d",
     "docker:compose:down": "docker-compose down",
     "docker:compose:logs": "docker-compose logs -f",
     "deploy:aws": "chmod +x deploy.sh && ./deploy.sh",
-    "test:ci": "npx playwright test && npx playwright show-report && node upload-playwright-report-to-s3.js && node tests/send-teams-report.js"
+    "test:ci": "npx playwright test && npx playwright show-report && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/send-teams-report.ts"
   },
   "keywords": [
     "playwright",

@@ -1,0 +1,30 @@
+import { BasePage } from '../BasePage';
+import { Page, expect } from '@playwright/test';
+
+export class SocialLoginPage extends BasePage {
+  constructor(page: Page) {
+    super(page);
+  }
+
+  async verifySocialLoginButtons() {
+    const socialLoginSelectors = [
+      'button:has-text("Google")',
+      'button:has-text("Facebook")',
+      'button:has-text("LinkedIn")',
+      'a[href*="google"]',
+      'a[href*="facebook"]',
+      'a[href*="linkedin"]',
+      '[class*="google"]',
+      '[class*="facebook"]',
+      '[class*="linkedin"]'
+    ];
+    let foundSocialLogin = false;
+    for (const selector of socialLoginSelectors) {
+      if (await this.page.locator(selector).count() > 0) {
+        foundSocialLogin = true;
+        break;
+      }
+    }
+    expect(foundSocialLogin).toBe(true);
+  }
+} 

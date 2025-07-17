@@ -1,6 +1,8 @@
-const fs = require('fs');
-const path = require('path');
-require('dotenv').config();
+import * as fs from 'fs';
+import * as path from 'path';
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 console.log('DEBUG ENV:', {
   AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
   AWS_REGION: process.env.AWS_REGION,
@@ -11,7 +13,8 @@ console.log('DEBUG ENV:', {
 console.log('✅ AlwaysJsonReporter loaded');
 
 class AlwaysJsonReporter {
-  constructor(options) {
+  options: any;
+  constructor(options: any) {
     this.options = options;
   }
 
@@ -38,8 +41,16 @@ class AlwaysJsonReporter {
     }
 
     // Collect all test results
-    const allTests = [];
-    function collect(suites) {
+    const allTests: Array<{
+      title: string;
+      file: string;
+      line: number;
+      status: string;
+      error: string;
+      attachments: any[];
+      isFailure: boolean;
+    }> = [];
+    function collect(suites: any[]) {
       if (!suites) return;
       for (const suite of suites) {
         if (suite.suites) collect(suite.suites);
@@ -67,29 +78,29 @@ class AlwaysJsonReporter {
     collect(report.suites);
 
     const counts = { passed: 0, failed: 0, skipped: 0 };
-    allTests.forEach(t => {
+    allTests.forEach((t) => {
       if (t.status === 'passed') counts.passed++;
       else if (t.status === 'skipped') counts.skipped++;
       else counts.failed++;
     });
 
     // Include all failures, not just 'failed' but also 'timedOut', 'unexpected', etc.
-    const failedTests = allTests.filter(t => t.isFailure);
-    const passedTests = allTests.filter(t => t.status === 'passed');
+    const failedTests = allTests.filter((t) => t.isFailure);
+    const passedTests = allTests.filter((t) => t.status === 'passed');
 
     let messageText = `**Test Results**\n- Passed: ${counts.passed}\n- Failed: ${counts.failed}\n- Skipped: ${counts.skipped}\n`;
 
     if (failedTests.length > 0) {
       messageText += `\n**❌ Failed Tests:**\n`;
-      messageText += failedTests.map(f => {
+      messageText += failedTests.map((f) => {
         let msg = `**${f.title}**\nFile: ${f.file}:${f.line}\nStatus: ${f.status}\nError: ${f.error}`;
-        const screenshots = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
-        const logs = (f.attachments || []).filter(a => a.name && a.name.toLowerCase().includes('log') && a.path);
+        const screenshots = (f.attachments || []).filter((a: any) => a.name && a.name.toLowerCase().includes('screenshot') && a.path);
+        const logs = (f.attachments || []).filter((a: any) => a.name && a.name.toLowerCase().includes('log') && a.path);
         if (screenshots.length > 0) {
-          // msg += `\nScreenshots: ${screenshots.map(s => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
+          // msg += `\nScreenshots: ${screenshots.map((s: any) => `[${path.basename(s.path)}](${s.path})`).join(', ')}`;
         }
         if (logs.length > 0) {
-          msg += `\nLogs: ${logs.map(l => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
+          msg += `\nLogs: ${logs.map((l: any) => `[${path.basename(l.path)}](${l.path})`).join(', ')}`;
         }
         return msg;
       }).join('\n\n');
@@ -99,7 +110,7 @@ class AlwaysJsonReporter {
 
     if (passedTests.length > 0) {
       messageText += `\n\n**✅ Passed Tests:**\n`;
-      messageText += passedTests.map(f => {
+      messageText += passedTests.map((f) => {
         let msg = `**${f.title}**\nFile: ${f.file}:${f.line}`;
         return msg;
       }).join('\n\n');
@@ -138,7 +149,7 @@ class AlwaysJsonReporter {
 
     // S3 URL helpers (declare only once)
     const reportUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_REPORT_PREFIX}/index.html`;
-    const screenshotUrl = (filename) =>
+    const screenshotUrl = (filename: string) =>
       `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_SCREENSHOT_PREFIX}/${filename}`;
 
     // --- Enhanced Notification Design ---
@@ -181,9 +192,9 @@ class AlwaysJsonReporter {
         hasFailures ? {
           "activityTitle": "**❌ Failed Tests**",
           "activitySubtitle": `Showing ${failedTests.length} failure(s) below` + '\n',
-          "facts": failedTests.map(f => {
+          "facts": failedTests.map((f) => {
             // Only use the filename for screenshot links
-            const screenshotAttachment = (f.attachments||[]).find(a=>a.name&&a.name.toLowerCase().includes('screenshot')&&a.path);
+            const screenshotAttachment = (f.attachments||[]).find((a: any) => a.name&&a.name.toLowerCase().includes('screenshot')&&a.path);
             let screenshotLink = '';
             if (screenshotAttachment && screenshotAttachment.path) {
               const filename = screenshotAttachment.path.split(/[\\/]/).pop();
@@ -209,9 +220,10 @@ class AlwaysJsonReporter {
     };
 
     // Use global fetch if available, otherwise fallback to node-fetch
-    let fetchFn = typeof fetch === 'function'
+    const fetchFn: any = typeof fetch === 'function'
       ? fetch
-      : (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
+      : (input: any, init?: any) =>
+          import('node-fetch').then(({ default: fetch }) => fetch(input, init));
 
     try {
       console.log('DEBUG: Sending Teams notification...');
@@ -234,4 +246,4 @@ class AlwaysJsonReporter {
   }
 }
 
-module.exports = AlwaysJsonReporter; 
+export default AlwaysJsonReporter; 

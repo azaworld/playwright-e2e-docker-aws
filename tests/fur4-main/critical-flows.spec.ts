@@ -1,6 +1,17 @@
+require('dotenv').config();
 import { test, expect } from '@playwright/test';
+import { HomePage } from '../../page-objects/fur4/HomePage';
+import { CheckoutPage } from '../../page-objects/fur4/CheckoutPage';
+import { AuthPage } from '../../page-objects/fur4/AuthPage';
+// import helpers if needed
+// import { someHelper } from '../utils/helpers';
 
-test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
+const FUR4_MAIN_URL = process.env.FUR4_MAIN_URL;
+const FUR4_REFERRAL_URL = process.env.FUR4_REFERRAL_URL;
+if (!FUR4_MAIN_URL) throw new Error('FUR4_MAIN_URL is not set in environment variables');
+if (!FUR4_REFERRAL_URL) throw new Error('FUR4_REFERRAL_URL is not set in environment variables');
+
+test.describe('[@module:critical] FUR4 Critical Flows - Proactive Monitoring', () => {
   test.beforeEach(async ({ page }) => {
     // Set realistic user agent to avoid bot detection
     await page.context().setExtraHTTPHeaders({
@@ -8,9 +19,11 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
     });
   });
 
-  test.describe('Authentication Flow Tests', () => {
-    test('login flow is functional and accessible', async ({ page }) => {
-      await page.goto('https://fur4.com/', { timeout: 60000 });
+  test.describe('[@module:critical] Authentication Flow Tests', () => {
+    test('login flow is functional and accessible [@case:CRIT-001]', async ({ page }) => {
+      await test.step('Navigate to home and look for login elements', async () => {
+        const homePage = new HomePage(page);
+        await homePage.navigateToHome();
       
       // Look for login elements
       const loginSelectors = [
@@ -38,7 +51,7 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
       if (foundLogin && loginUrl) {
         // Test login page accessibility
         try {
-          await page.goto(loginUrl.startsWith('http') ? loginUrl : `https://fur4.com${loginUrl}`, { timeout: 30000 });
+          await page.goto(loginUrl.startsWith('http') ? loginUrl : `${FUR4_MAIN_URL}${loginUrl}`, { timeout: 30000 });
           await page.waitForLoadState('domcontentloaded');
           
           // Check for login form elements
@@ -65,8 +78,10 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
       }
     });
 
-    test('social login providers are accessible', async ({ page }) => {
-      await page.goto('https://fur4.com/', { timeout: 60000 });
+    test('social login providers are accessible [@case:CRIT-002]', async ({ page }) => {
+      await test.step('Navigate to home and look for login page', async () => {
+        const homePage = new HomePage(page);
+        await homePage.navigateToHome();
       
       // Look for login page first
       const loginSelectors = [
@@ -117,8 +132,10 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
   });
 
   test.describe('Checkout Flow Tests', () => {
-    test('checkout flow is accessible and functional', async ({ page }) => {
-      await page.goto('https://fur4.com/', { timeout: 60000 });
+    test('checkout flow is accessible and functional [@case:CRIT-003]', async ({ page }) => {
+      await test.step('Navigate to home and look for product/cart elements', async () => {
+        const homePage = new HomePage(page);
+        await homePage.navigateToHome();
       
       // Look for product/cart elements
       const cartSelectors = [
@@ -161,8 +178,10 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
       }
     });
 
-    test('payment integration elements are present', async ({ page }) => {
-      await page.goto('https://fur4.com/', { timeout: 60000 });
+    test('payment integration elements are present [@case:CRIT-004]', async ({ page }) => {
+      await test.step('Navigate to home and look for payment-related elements', async () => {
+        const homePage = new HomePage(page);
+        await homePage.navigateToHome();
       
       // Look for payment-related elements
       const paymentSelectors = [
@@ -210,8 +229,10 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
   });
 
   test.describe('Referral System Tests', () => {
-    test('referral claiming flow is functional', async ({ page }) => {
-      await page.goto('https://refer.fur4.com/', { timeout: 60000 });
+    test('referral claiming flow is functional [@case:CRIT-005]', async ({ page }) => {
+      await test.step('Navigate to referral page and look for claim elements', async () => {
+        const referralPage = new AuthPage(page);
+        await referralPage.navigateToReferralPage();
       
       // Look for referral claim elements
       const referralSelectors = [
@@ -259,8 +280,10 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
       }
     });
 
-    test('referral tracking system is accessible', async ({ page }) => {
-      await page.goto('https://refer.fur4.com/', { timeout: 60000 });
+    test('referral tracking system is accessible [@case:CRIT-006]', async ({ page }) => {
+      await test.step('Navigate to referral page and look for tracking elements', async () => {
+        const referralPage = new AuthPage(page);
+        await referralPage.navigateToReferralPage();
       
       // Look for referral tracking elements
       const trackingSelectors = [
@@ -308,8 +331,10 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
   });
 
   test.describe('Discount Code Tests', () => {
-    test('discount code application flow is functional', async ({ page }) => {
-      await page.goto('https://fur4.com/', { timeout: 60000 });
+    test('discount code application flow is functional [@case:CRIT-007]', async ({ page }) => {
+      await test.step('Navigate to home and look for discount/coupon elements', async () => {
+        const homePage = new HomePage(page);
+        await homePage.navigateToHome();
       
       // Look for discount/coupon elements
       const discountSelectors = [
@@ -343,8 +368,10 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
   });
 
   test.describe('API Integration Health Checks', () => {
-    test('external API integrations are responding', async ({ page }) => {
-      await page.goto('https://fur4.com/', { timeout: 60000 });
+    test('external API integrations are responding [@case:CRIT-008]', async ({ page }) => {
+      await test.step('Monitor for API-related errors in console', async () => {
+        const homePage = new HomePage(page);
+        await homePage.navigateToHome();
       
       // Monitor for API-related errors in console
       const apiErrors: string[] = [];
@@ -384,4 +411,4 @@ test.describe('FUR4 Critical Flows - Proactive Monitoring', () => {
       expect(true).toBe(true);
     });
   });
-}); 
+});
