@@ -17,7 +17,6 @@ test.describe('FUR4 Main Site - Guest User Tests', () => {
   });
 
   test.describe('Homepage Tests', () => {
-    // Passing test case 2
     test(`${buildTag({ site: 'fur4', module: 'nav' })} Should display all expected CTAs and navigation elements on the homepage`, async ({ page }) => {
       await test.step('Navigate to the home page to check for CTAs and navigation', async () => {
         const homePage = new HomePage(page);
@@ -31,7 +30,6 @@ test.describe('FUR4 Main Site - Guest User Tests', () => {
   });
 
   test.describe('Cart and Checkout Tests', () => {
-    // Passing test case 3
     test(`${buildTag({ site: 'fur4', module: 'checkout' })} Should allow a guest user to add an item to the cart`, async ({ page }) => {
       await test.step('Navigate to the home page to start the add-to-cart flow', async () => {
         const homePage = new HomePage(page);
