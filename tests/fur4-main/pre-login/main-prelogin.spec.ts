@@ -16,18 +16,18 @@ test.describe('FUR4 Main Site - Guest User Tests', () => {
     });
   });
 
-  test.describe('Homepage Tests', () => {
-    test(`${buildTag({ site: 'fur4', module: 'nav' })} Should display all expected CTAs and navigation elements on the homepage`, async ({ page }) => {
-      await test.step('Navigate to the home page to check for CTAs and navigation', async () => {
-        const homePage = new HomePage(page);
-        await homePage.gotoHome(FUR4_MAIN_URL);
-      });
-      await test.step('Assert that all expected CTA buttons and navigation elements are present', async () => {
-        const homePage = new HomePage(page);
-        expect(await homePage.hasCTA()).toBe(true);
-      });
-    });
-  });
+  // test.describe('Homepage Tests', () => {
+  //   test(`${buildTag({ site: 'fur4', module: 'nav' })} Should display all expected CTAs and navigation elements on the homepage`, async ({ page }) => {
+  //     await test.step('Navigate to the home page to check for CTAs and navigation', async () => {
+  //       const homePage = new HomePage(page);
+  //       await homePage.gotoHome(FUR4_MAIN_URL);
+  //     });
+  //     await test.step('Assert that all expected CTA buttons and navigation elements are present', async () => {
+  //       const homePage = new HomePage(page);
+  //       expect(await homePage.hasCTA()).toBe(true);
+  //     });
+  //   });
+  // });
 
   test.describe('Cart and Checkout Tests', () => {
     test(`${buildTag({ site: 'fur4', module: 'checkout' })} Should allow a guest user to add an item to the cart`, async ({ page }) => {

@@ -6,7 +6,7 @@
     "test": "playwright test",
     "test:fur4": "playwright test tests/fur4-main/fur4-main-site.spec.ts",
     "test:refer": "playwright test tests/fur4-referral/fur4-referral-site.spec.ts",
-    "test:all": "playwright test tests/fur4-main/ tests/fur4-referral/",
+    "test:all": "npx playwright test && npx playwright show-report && npm run allure:generate && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/always-json-reporter.ts",
     "test:critical": "playwright test tests/fur4-main/critical-flows.spec.ts",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
@@ -16,15 +16,19 @@
     "monitor:single": "ts-node tests/real-time-monitor.ts single",
     "monitor:continuous": "ts-node tests/real-time-monitor.ts continuous",
     "monitor:start": "npm run monitor:continuous 5",
-    "test:teams": "SEND_TEAMS=true npx playwright test",
+    "test:teams": "npx playwright test && npx ts-node tests/utils/upload-playwright-report-to-s3.ts && npx ts-node tests/utils/send-teams-report.ts",
     "test:teams:full": "npm run test:teams && npx playwright show-report && ts-node tests/utils/upload-playwright-report-to-s3.ts",
+    "test:full": "npx playwright test && npx playwright show-report && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/always-json-reporter.ts",
     "docker:build": "docker build -t fur4-playwright-tests .",
     "docker:run": "docker run --rm -e TEAMS_WEBHOOK_URL=$TEAMS_WEBHOOK_URL fur4-playwright-tests",
     "docker:compose:up": "docker-compose up -d",
     "docker:compose:down": "docker-compose down",
     "docker:compose:logs": "docker-compose logs -f",
     "deploy:aws": "chmod +x deploy.sh && ./deploy.sh",
-    "test:ci": "npx playwright test && npx playwright show-report && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/send-teams-report.ts"
+    "test:ci": "npx playwright test && npx playwright show-report && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/send-teams-report.ts",
+    "allure:generate": "npx allure generate ./allure-results --clean -o ./allure-report",
+    "allure:open": "npx allure open \"./allure-report\"",
+    "test:allure": "npx playwright test && npx allure serve allure-results"
   },
   "keywords": [
     "playwright",
@@ -38,6 +42,8 @@
   "devDependencies": {
     "@playwright/test": "^1.53.2",
     "@types/node": "^24.0.10",
+    "allure-commandline": "^2.34.1",
+    "allure-playwright": "^3.3.2",
     "dotenv": "^17.2.0",
     "ts-node": "^10.9.2"
   },

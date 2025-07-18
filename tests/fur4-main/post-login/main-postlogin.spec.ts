@@ -2,8 +2,8 @@
 import { test, expect } from '@playwright/test';
 import { buildTag } from '../../utils/tagBuilder';
 
-test.describe('FUR4 Main Site - Authenticated User Tests', () => {
-  test(`${buildTag({ site: 'fur4', module: 'auth' })} Placeholder for post-login (authenticated) test cases`, async () => {
-    expect(true).toBe(true);
-  });
-}); 
+// test.describe('FUR4 Main Site - Authenticated User Tests', () => {
+//   test(`${buildTag({ site: 'fur4', module: 'auth' })} Placeholder for post-login (authenticated) test cases`, async () => {
+//     expect(true).toBe(true);
+//   });
+// }); 

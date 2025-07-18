@@ -223,11 +223,16 @@ class AlwaysJsonReporter {
       });
       // console.log('DEBUG: Teams response status:', response.status);
       if (response.ok) {
-        // console.log('✅ Teams notification sent successfully');
+        // Notification sent successfully
+        // eslint-disable-next-line no-console
+        console.log('✅ Teams notification sent successfully.');
       } else {
-        const text = await response.text();
+        // eslint-disable-next-line no-console
+        console.log('❌ Teams notification failed to send.');
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
+      console.log('❌ Teams notification error:', error);
     }
   }
 }

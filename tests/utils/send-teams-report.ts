@@ -3,11 +3,30 @@ import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const jsonReportPath = path.join(process.cwd(), 'test-results', 'playwright-report.json');
-let report: any;
-try {
-  report = JSON.parse(fs.readFileSync(jsonReportPath, 'utf-8'));
-} catch (e) {
+const possibleReportPaths = [
+  path.join(process.cwd(), 'playwright-report.json'),
+  path.join(process.cwd(), 'test-results', 'playwright-report.json'),
+  path.join(process.cwd(), 'test-results', 'results.json'),
+  path.join(process.cwd(), 'playwright-report', 'report.json'),
+];
+let report;
+let foundPath = '';
+for (const p of possibleReportPaths) {
+  try {
+    if (fs.existsSync(p)) {
+      report = JSON.parse(fs.readFileSync(p, 'utf-8'));
+      foundPath = p;
+      break;
+    }
+  } catch (e) {
+    // continue
+  }
+}
+console.log('DEBUG: Attempted report paths:', possibleReportPaths);
+if (foundPath) {
+  console.log('DEBUG: Loaded report from', foundPath);
+} else {
+  console.error('ERROR: No Playwright JSON report found in any known location.');
   process.exit(1);
 }
 
@@ -103,6 +122,7 @@ let fetchFn: any = typeof fetch === 'function'
   : (...args: any[]) => import('node-fetch').then(({default: fetch}) => (fetch as any)(...args));
 
 const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+console.log('DEBUG: TEAMS_WEBHOOK_URL is', webhookUrl ? webhookUrl.slice(0, 30) + '...' : 'NOT SET');
 if (!webhookUrl) {
   console.log('⚠️  No Teams webhook URL configured, skipping notification');
   process.exit(0);
