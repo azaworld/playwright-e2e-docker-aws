@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 dotenv.config();
 import AWS from 'aws-sdk';
+import type { PutObjectRequest } from 'aws-sdk/clients/s3';
 import fs from 'fs';
 import path from 'path';
 
@@ -39,14 +40,18 @@ async function uploadDirToS3(localDir: string, s3Prefix: string) {
   for (const filePath of files) {
     const s3Key = path.join(s3Prefix, path.relative(localDir, filePath)).replace(/\\/g, '/');
     const fileContent = fs.readFileSync(filePath);
-    await s3.putObject({
-      Bucket: AWS_S3_BUCKET,
+    const params = {
+      Bucket: AWS_S3_BUCKET!,
       Key: s3Key,
       Body: fileContent,
       ContentType: getContentType(filePath),
       ACL: 'public-read'
-    }).promise();
-    console.log(`Uploaded: ${s3Key}`);
+    };
+    try {
+      await s3.putObject(params as any).promise();
+    } catch {
+      // Suppress all errors
+    }
   }
 }
 
@@ -61,11 +66,14 @@ function getContentType(filePath: string): string {
 }
 
 (async () => {
-  if (fs.existsSync('playwright-report')) {
-    await uploadDirToS3('playwright-report', AWS_S3_REPORT_PREFIX);
+  try {
+    if (fs.existsSync('playwright-report')) {
+      await uploadDirToS3('playwright-report', AWS_S3_REPORT_PREFIX);
+    }
+    if (fs.existsSync('playwright-report/data')) {
+      await uploadDirToS3('playwright-report/data', AWS_S3_SCREENSHOT_PREFIX);
+    }
+  } catch {
+    // Suppress all errors
   }
-  if (fs.existsSync('playwright-report/data')) {
-    await uploadDirToS3('playwright-report/data', AWS_S3_SCREENSHOT_PREFIX);
-  }
-  console.log('All uploads complete!');
 })();

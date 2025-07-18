@@ -127,9 +127,7 @@ function analyzeFailure(testTitle: string, errorMessage: string): FailureAnalysi
 
 async function sendTeamsNotification(results: any, config: FullConfig) {
   const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
-  console.log('DEBUG: Entered sendTeamsNotification, webhook:', webhookUrl);
   if (!webhookUrl) {
-    console.log('⚠️  No Teams webhook URL configured, skipping notification');
     return;
   }
 
@@ -299,51 +297,39 @@ async function sendTeamsNotification(results: any, config: FullConfig) {
     });
     
     if (response.ok) {
-      console.log('✅ Enhanced Teams notification sent successfully');
     } else {
-      console.error('❌ Failed to send Teams notification:', response.status, response.statusText);
     }
   } catch (error) {
-    console.error('❌ Error sending Teams notification:', error);
   }
 }
 
 async function globalTeardown(config: FullConfig) {
-  console.log('🏁 Test suite completed, processing results...');
-  
   // Read test results from JSON file
   let resultsPath = path.join(process.cwd(), 'test-results', 'results.json');
   if (!fs.existsSync(resultsPath)) {
     // Fallback to playwright-report/results.json if not found in test-results
     resultsPath = path.join(process.cwd(), 'playwright-report', 'results.json');
-    console.log('DEBUG: test-results/results.json not found, trying playwright-report/results.json');
   }
   if (!fs.existsSync(resultsPath)) {
     // Fallback to test-results/report.json (Playwright default for --output)
     resultsPath = path.join(process.cwd(), 'test-results', 'report.json');
-    console.log('DEBUG: playwright-report/results.json not found, trying test-results/report.json');
   }
-  console.log('DEBUG: Looking for test results at', resultsPath);
   let testResults = null;
   
   try {
     if (fs.existsSync(resultsPath)) {
       const resultsData = fs.readFileSync(resultsPath, 'utf8');
       testResults = JSON.parse(resultsData);
-      console.log('DEBUG: Test results loaded:', testResults);
     } else {
-      console.log('DEBUG: Test results file does not exist.');
     }
   } catch (error) {
-    console.error('❌ Error reading test results:', error);
+    // Removed error logging
   }
   
   // Send enhanced Teams notification
   if (testResults) {
-    console.log('DEBUG: Calling sendTeamsNotification...');
     await sendTeamsNotification(testResults, config);
   } else {
-    console.log('DEBUG: No test results to send.');
   }
   
   // Print summary

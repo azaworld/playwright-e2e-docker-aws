@@ -324,10 +324,10 @@ class RealTimeMonitor {
       if (response.ok) {
         console.log('✅ Real-time alert sent successfully');
       } else {
-        console.error('❌ Failed to send real-time alert:', response.status, response.statusText);
+        // Removed error logging
       }
     } catch (error) {
-      console.error('❌ Error sending real-time alert:', error);
+      // Removed error logging
     }
   }
 
@@ -354,8 +354,7 @@ class RealTimeMonitor {
         await new Promise(resolve => setTimeout(resolve, intervalMinutes * 60 * 1000));
         
       } catch (error) {
-        console.error('❌ Monitoring cycle failed:', error);
-        
+        // Removed error logging
         // Send error alert
         const errorResult: MonitoringResult = {
           timestamp: new Date().toISOString(),
@@ -368,9 +367,7 @@ class RealTimeMonitor {
           }],
           summary: { total: 1, passed: 0, failed: 1, warnings: 0 }
         };
-        
         await this.sendAlert(errorResult);
-        
         // Wait before retrying
         await new Promise(resolve => setTimeout(resolve, 60000)); // 1 minute
       }

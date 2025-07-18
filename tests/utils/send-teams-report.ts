@@ -8,7 +8,6 @@ let report: any;
 try {
   report = JSON.parse(fs.readFileSync(jsonReportPath, 'utf-8'));
 } catch (e) {
-  console.error('❌ Could not read Playwright JSON report:', e);
   process.exit(1);
 }
 
@@ -111,21 +110,15 @@ if (!webhookUrl) {
 
 (async () => {
   try {
-    console.log('DEBUG: Sending Teams notification...');
     const response = await fetchFn(webhookUrl, {
       method: 'POST',
       body: JSON.stringify(message),
       headers: { 'Content-Type': 'application/json' }
     });
-    console.log('DEBUG: Teams response status:', response.status);
     if (response.ok) {
-      console.log('✅ Teams notification sent successfully');
     } else {
-      console.error('❌ Failed to send Teams notification:', response.status, response.statusText);
       const text = await response.text();
-      console.error('❌ Teams response body:', text);
     }
   } catch (error) {
-    console.error('❌ Error sending Teams notification:', error);
   }
 })();

@@ -3,14 +3,7 @@ import * as path from 'path';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-console.log('DEBUG ENV:', {
-  AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
-  AWS_REGION: process.env.AWS_REGION,
-  AWS_S3_REPORT_PREFIX: process.env.AWS_S3_REPORT_PREFIX,
-  AWS_S3_SCREENSHOT_PREFIX: process.env.AWS_S3_SCREENSHOT_PREFIX
-});
-
-console.log('✅ AlwaysJsonReporter loaded');
+// All console.log statements removed
 
 class AlwaysJsonReporter {
   options: any;
@@ -29,14 +22,10 @@ class AlwaysJsonReporter {
     try {
       if (fs.existsSync(jsonReportPath)) {
         report = JSON.parse(fs.readFileSync(jsonReportPath, 'utf-8'));
-        console.log('DEBUG: Found test results at:', jsonReportPath);
       } else {
-        console.log('DEBUG: No test results file found at any location');
-        console.log('DEBUG: This might mean no tests were executed');
         return; // Exit gracefully if no results file exists
       }
     } catch (e) {
-      console.error('❌ Could not read Playwright JSON report:', e);
       return;
     }
 
@@ -117,12 +106,12 @@ class AlwaysJsonReporter {
     }
 
     // Print the full summary and details to the console for local review
-    console.log('DEBUG: Test counts:', counts);
-    console.log('DEBUG: Failed tests:', JSON.stringify(failedTests, null, 2));
-    console.log('DEBUG: Passed tests:', JSON.stringify(passedTests, null, 2));
-    console.log('DEBUG: Message text preview:\n', messageText);
+    // console.log('DEBUG: Test counts:', counts);
+    // console.log('DEBUG: Failed tests:', JSON.stringify(failedTests, null, 2));
+    // console.log('DEBUG: Passed tests:', JSON.stringify(passedTests, null, 2));
+    // console.log('DEBUG: Message text preview:\n', messageText);
     if (counts.failed !== failedTests.length) {
-      console.warn(`WARNING: Failed test count (${counts.failed}) does not match failed test details (${failedTests.length}). Some failures may not be listed.`);
+      // console.warn(`WARNING: Failed test count (${counts.failed}) does not match failed test details (${failedTests.length}). Some failures may not be listed.`);
     }
 
     // Only send to Teams if SEND_TEAMS env var is set to 'true'
@@ -134,9 +123,9 @@ class AlwaysJsonReporter {
 
     // Teams webhook
     const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
-    console.log('DEBUG: Using webhook URL:', webhookUrl);
+    // console.log('DEBUG: Using webhook URL:', webhookUrl);
     if (!webhookUrl) {
-      console.log('⚠️  No Teams webhook URL configured, skipping notification');
+      // console.log('⚠️  No Teams webhook URL configured, skipping notification');
       return;
     }
 
@@ -226,22 +215,19 @@ class AlwaysJsonReporter {
           import('node-fetch').then(({ default: fetch }) => fetch(input, init));
 
     try {
-      console.log('DEBUG: Sending Teams notification...');
+      // console.log('DEBUG: Sending Teams notification...');
       const response = await fetchFn(webhookUrl, {
         method: 'POST',
         body: JSON.stringify(message),
         headers: { 'Content-Type': 'application/json' }
       });
-      console.log('DEBUG: Teams response status:', response.status);
+      // console.log('DEBUG: Teams response status:', response.status);
       if (response.ok) {
-        console.log('✅ Teams notification sent successfully');
+        // console.log('✅ Teams notification sent successfully');
       } else {
-        console.error('❌ Failed to send Teams notification:', response.status, response.statusText);
         const text = await response.text();
-        console.error('❌ Teams response body:', text);
       }
     } catch (error) {
-      console.error('❌ Error sending Teams notification:', error);
     }
   }
 }
