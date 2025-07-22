@@ -1,6 +1,11 @@
 import { FullConfig } from '@playwright/test';
 import * as fs from 'fs';
 import * as path from 'path';
+import dotenv from 'dotenv';
+dotenv.config();
+import { generateTeamsMessage } from './utils/teamsMessage';
+
+console.log('DEBUG: global-teardown.ts started');
 
 interface TestResult {
   status: 'passed' | 'failed' | 'skipped';
@@ -125,231 +130,246 @@ function analyzeFailure(testTitle: string, errorMessage: string): FailureAnalysi
   };
 }
 
-async function sendTeamsNotification(results: any, config: FullConfig) {
-  const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
-  console.log('DEBUG: Entered sendTeamsNotification, webhook:', webhookUrl);
-  if (!webhookUrl) {
-    console.log('⚠️  No Teams webhook URL configured, skipping notification');
-    return;
-  }
-
-  const totalTests = results.stats.total;
-  const passedTests = results.stats.passed;
-  const failedTests = results.stats.failed;
-  const skippedTests = results.stats.skipped;
-  
-  const testRunId = process.env.TEST_RUN_ID || 'unknown';
-  const startTime = process.env.TEST_START_TIME || new Date().toISOString();
-  const endTime = new Date().toISOString();
-  
-  // Calculate duration
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  const duration = Math.round((end.getTime() - start.getTime()) / 1000);
-  
-  // Determine status and color
-  const status = failedTests > 0 ? '❌ FAILED' : '✅ PASSED';
-  const color = failedTests > 0 ? '#ff0000' : '#00ff00';
-  
-  // Analyze failures for proactive alerts
-  const failedTestsWithAnalysis = results.suites
-    ?.flatMap((suite: any) => suite.specs)
-    ?.flatMap((spec: any) => spec.tests)
-    ?.filter((test: any) => test.results?.[0]?.status === 'failed')
-    ?.map((test: any) => {
-      const analysis = analyzeFailure(test.title, test.results[0].error?.message || 'Unknown error');
-      return {
-        title: test.title,
-        error: test.results[0].error?.message || 'Unknown error',
-        analysis
-      };
-    })
-    ?.sort((a: any, b: any) => {
-      const priority = { critical: 4, high: 3, medium: 2, low: 1 };
-      return priority[b.analysis.category] - priority[a.analysis.category];
-    }) || [];
-  
-  // Group failures by category
-  const criticalFailures = failedTestsWithAnalysis.filter((f: any) => f.analysis.category === 'critical');
-  const highFailures = failedTestsWithAnalysis.filter((f: any) => f.analysis.category === 'high');
-  const mediumFailures = failedTestsWithAnalysis.filter((f: any) => f.analysis.category === 'medium');
-  
-  const message = {
-    "@type": "MessageCard",
-    "@context": "http://schema.org/extensions",
-    "themeColor": color,
-    "summary": `FUR4 Test Results - ${status}`,
-    "sections": [
-      {
-        "activityTitle": `🚨 FUR4 Automated Test Suite - ${status}`,
-        "activitySubtitle": `Test Run ID: ${testRunId}`,
-        "activityImage": "https://playwright.dev/img/playwright-logo.svg",
-        "facts": [
-          {
-            "name": "📊 Test Results",
-            "value": `Passed: ${passedTests} | Failed: ${failedTests} | Skipped: ${skippedTests}`
-          },
-          {
-            "name": "⏱️ Duration",
-            "value": `${duration} seconds`
-          },
-          {
-            "name": "🕐 Start Time",
-            "value": new Date(startTime).toLocaleString()
-          },
-          {
-            "name": "🕐 End Time",
-            "value": new Date(endTime).toLocaleString()
-          }
-        ],
-        "markdown": true
-      }
-    ],
-    "potentialAction": [
-      {
-        "@type": "OpenUri",
-        "name": "View HTML Report",
-        "targets": [
-          {
-            "os": "default",
-            "uri": "file://" + path.resolve(process.cwd(), 'playwright-report/index.html')
-          }
-        ]
-      }
-    ]
-  };
-  
-  // Add critical failures section
-  if (criticalFailures.length > 0) {
-    const criticalSection = {
-      "activityTitle": "🚨 CRITICAL FAILURES - IMMEDIATE ACTION REQUIRED",
-      "activitySubtitle": `${criticalFailures.length} critical issues detected`,
-      "activityImage": "https://playwright.dev/img/playwright-logo.svg",
-      "facts": criticalFailures.slice(0, 3).map((f: any) => ({
-        "name": `❌ ${f.analysis.description}`,
-        "value": `Impact: ${f.analysis.impact}\nRecommendation: ${f.analysis.recommendation}`
-      })),
-      "markdown": true
-    };
-    message.sections.push(criticalSection);
-  }
-  
-  // Add high priority failures section
-  if (highFailures.length > 0) {
-    const highSection = {
-      "activityTitle": "⚠️ HIGH PRIORITY FAILURES",
-      "activitySubtitle": `${highFailures.length} high priority issues detected`,
-      "activityImage": "https://playwright.dev/img/playwright-logo.svg",
-      "facts": highFailures.slice(0, 3).map((f: any) => ({
-        "name": `⚠️ ${f.analysis.description}`,
-        "value": `Impact: ${f.analysis.impact}\nRecommendation: ${f.analysis.recommendation}`
-      })),
-      "markdown": true
-    };
-    message.sections.push(highSection);
-  }
-  
-  // Add medium priority failures section
-  if (mediumFailures.length > 0) {
-    const mediumSection = {
-      "activityTitle": "📋 MEDIUM PRIORITY ISSUES",
-      "activitySubtitle": `${mediumFailures.length} medium priority issues detected`,
-      "activityImage": "https://playwright.dev/img/playwright-logo.svg",
-      "facts": mediumFailures.slice(0, 3).map((f: any) => ({
-        "name": `📋 ${f.analysis.description}`,
-        "value": `Impact: ${f.analysis.impact}\nRecommendation: ${f.analysis.recommendation}`
-      })),
-      "markdown": true
-    };
-    message.sections.push(mediumSection);
-  }
-  
-  // Add proactive monitoring insights
-  if (failedTests > 0) {
-    const insightsSection = {
-      "activityTitle": "🔍 PROACTIVE MONITORING INSIGHTS",
-      "activitySubtitle": "Key areas requiring attention",
-      "activityImage": "https://playwright.dev/img/playwright-logo.svg",
-      "facts": [
-        {
-          "name": "💰 Revenue Impact",
-          "value": criticalFailures.length > 0 ? "CRITICAL - Immediate revenue impact detected" : "Monitor closely"
-        },
-        {
-          "name": "👥 User Experience",
-          "value": highFailures.length > 0 ? "DEGRADED - User flows affected" : "Good"
-        },
-        {
-          "name": "🔧 System Health",
-          "value": failedTests > 3 ? "POOR - Multiple system issues" : "Stable"
+// Helper to collect all tests from nested suites
+function collectAllTests(suites: any[]): any[] {
+  let tests: any[] = [];
+  for (const suite of suites) {
+    if (suite.specs && suite.specs.length > 0) {
+      for (const spec of suite.specs) {
+        if (spec.tests) {
+          tests = tests.concat(spec.tests);
         }
-      ],
-      "markdown": true
-    };
-    message.sections.push(insightsSection);
-  }
-  
-  try {
-    const response = await fetch(webhookUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
-    });
-    
-    if (response.ok) {
-      console.log('✅ Enhanced Teams notification sent successfully');
-    } else {
-      console.error('❌ Failed to send Teams notification:', response.status, response.statusText);
+      }
     }
-  } catch (error) {
-    console.error('❌ Error sending Teams notification:', error);
+    if (suite.suites && suite.suites.length > 0) {
+      tests = tests.concat(collectAllTests(suite.suites));
+    }
+  }
+  return tests;
+}
+
+async function sendTeamsNotification(results: any, config: FullConfig) {
+  try {
+    const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+    if (!webhookUrl) {
+      console.error('ERROR: TEAMS_WEBHOOK_URL not set');
+      return;
+    }
+    // Fix stats extraction for Playwright JSON structure
+    const totalTests = results.stats.expected;
+    const failedTests = results.stats.unexpected;
+    const skippedTests = results.stats.skipped;
+    const passedTests = totalTests - failedTests - skippedTests;
+    const testRunId = process.env.TEST_RUN_ID || 'unknown';
+    const startTime = process.env.TEST_START_TIME || new Date().toISOString();
+    const endTime = new Date().toISOString();
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+    const duration = Math.round((end.getTime() - start.getTime()) / 1000);
+    const status = failedTests > 0 ? '❌ FAILED' : '✅ PASSED';
+    const color = failedTests > 0 ? '#ff0000' : '#00ff00';
+    // S3 report link
+    const reportUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_REPORT_PREFIX}/index.html`;
+    // Collect failed test details using recursive test collection
+    const allTests = collectAllTests(results.suites || []);
+    const failedDetails = allTests
+      .filter((test: any) => test.results?.[0]?.status === 'failed')
+      .map((test: any) => `**${test.title}**\nError: ${test.results[0].error?.message || 'Unknown error'}`)
+      .join('\n\n') || '';
+    // Teams message card
+    const message = {
+      "@type": "MessageCard",
+      "@context": "http://schema.org/extensions",
+      "themeColor": color,
+      "summary": `FUR4 Test Results - ${status}`,
+      "title": `FUR4 Automated Test Suite - ${status}`,
+      "sections": [
+        {
+          "activityTitle": `FUR4 Test Run - ${status}`,
+          "activitySubtitle": `Test Run ID: ${testRunId}`,
+          "facts": [
+            { "name": "📊 Test Results", "value": `Passed: ${passedTests} | Failed: ${failedTests} | Skipped: ${skippedTests}` },
+            { "name": "⏱️ Duration", "value": `${duration} seconds` },
+            { "name": "🕐 Start Time", "value": new Date(startTime).toLocaleString() },
+            { "name": "🕐 End Time", "value": new Date(endTime).toLocaleString() },
+            { "name": "🔗 HTML Report", "value": `[View Latest Test Report](${reportUrl})` }
+          ],
+          "markdown": true
+        },
+        failedTests > 0 ? {
+          "activityTitle": "❌ Failed Tests",
+          "text": failedDetails || 'No details',
+          "markdown": true
+        } : null
+      ].filter(Boolean),
+      "potentialAction": [
+        {
+          "@type": "OpenUri",
+          "name": failedTests > 0 ? "🔴 View Latest Test Report" : "🟢 View Latest Test Report",
+          "targets": [
+            { "os": "default", "uri": reportUrl }
+          ]
+        }
+      ]
+    };
+    // Send to Teams
+    const fetchFn: any = typeof fetch === 'function'
+      ? fetch
+      : (...args: any[]) => import('node-fetch').then(({default: fetch}) => (fetch as any)(...args));
+    const response = await fetchFn(webhookUrl, {
+      method: 'POST',
+      body: JSON.stringify(message),
+      headers: { 'Content-Type': 'application/json' }
+    });
+    console.log('Teams response status:', response.status);
+    let responseText = '';
+    try { responseText = await response.text(); } catch {}
+    console.log('Teams response body:', responseText);
+    if (response.ok) {
+      console.log('Teams notification sent successfully.');
+    } else {
+      console.log('Teams notification failed to send.');
+    }
+  } catch (err) {
+    console.error('ERROR in sendTeamsNotification:', err);
   }
 }
 
-async function globalTeardown(config: FullConfig) {
-  console.log('🏁 Test suite completed, processing results...');
-  
-  // Read test results from JSON file
-  let resultsPath = path.join(process.cwd(), 'test-results', 'results.json');
-  if (!fs.existsSync(resultsPath)) {
-    // Fallback to playwright-report/results.json if not found in test-results
-    resultsPath = path.join(process.cwd(), 'playwright-report', 'results.json');
-    console.log('DEBUG: test-results/results.json not found, trying playwright-report/results.json');
-  }
-  if (!fs.existsSync(resultsPath)) {
-    // Fallback to test-results/report.json (Playwright default for --output)
-    resultsPath = path.join(process.cwd(), 'test-results', 'report.json');
-    console.log('DEBUG: playwright-report/results.json not found, trying test-results/report.json');
-  }
-  console.log('DEBUG: Looking for test results at', resultsPath);
-  let testResults = null;
-  
-  try {
-    if (fs.existsSync(resultsPath)) {
-      const resultsData = fs.readFileSync(resultsPath, 'utf8');
-      testResults = JSON.parse(resultsData);
-      console.log('DEBUG: Test results loaded:', testResults);
-    } else {
-      console.log('DEBUG: Test results file does not exist.');
+async function waitForFileWithValidJson(filePath: string, retries = 10, delayMs = 500): Promise<boolean> {
+  for (let i = 0; i < retries; i++) {
+    if (fs.existsSync(filePath)) {
+      try {
+        const content = fs.readFileSync(filePath, 'utf8');
+        if (content && content.trim().length > 0) {
+          JSON.parse(content); // will throw if not valid JSON
+          return true;
+        }
+      } catch (e) {
+        console.log(`DEBUG: File exists but not valid JSON yet (attempt ${i+1})`);
+      }
     }
-  } catch (error) {
-    console.error('❌ Error reading test results:', error);
+    await new Promise(res => setTimeout(res, delayMs));
   }
-  
-  // Send enhanced Teams notification
-  if (testResults) {
-    console.log('DEBUG: Calling sendTeamsNotification...');
-    await sendTeamsNotification(testResults, config);
+  return false;
+}
+
+async function globalTeardown(config: FullConfig) {
+  console.log('DEBUG: globalTeardown called');
+  // Robustly find the JSON report
+  const possiblePaths = [
+    path.join(process.cwd(), 'test-results', 'playwright-report.json'),
+    path.join(process.cwd(), 'test-results', 'results.json'),
+    path.join(process.cwd(), 'playwright-report', 'results.json'),
+    path.join(process.cwd(), 'test-results', 'report.json'),
+  ];
+  let testResults = null;
+  let foundPath = '';
+  for (const p of possiblePaths) {
+    try {
+      if (await waitForFileWithValidJson(p)) {
+        const resultsData = fs.readFileSync(p, 'utf8');
+        testResults = JSON.parse(resultsData);
+        foundPath = p;
+        break;
+      }
+    } catch (error) {
+      console.error('ERROR reading test results at', p, error);
+    }
+  }
+
+  // Wait for Allure report upload (assume index.html is the marker)
+  const allureReportPath = path.join(process.cwd(), 'allure-report', 'index.html');
+  await waitForFileWithValidJson(allureReportPath, 10, 500);
+
+  // S3 URLs
+  const htmlUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_REPORT_PREFIX}/index.html`;
+  const allureUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_ALLURE_PREFIX}/index.html`;
+  const env = process.env.TEST_ENV || 'Production';
+
+  // Parse test results for metrics
+  let total = 0, passed = 0, failed = 0, skipped = 0, duration = 'N/A';
+  if (testResults && testResults.suites) {
+    // Recursively collect all tests
+    function collectAllTests(suites: any[]): any[] {
+      let tests: any[] = [];
+      for (const suite of suites) {
+        if (suite.specs && suite.specs.length > 0) {
+          for (const spec of suite.specs) {
+            if (spec.tests) {
+              tests = tests.concat(spec.tests);
+            }
+          }
+        }
+        if (suite.suites && suite.suites.length > 0) {
+          tests = tests.concat(collectAllTests(suite.suites));
+        }
+      }
+      return tests;
+    }
+    const allTests = collectAllTests(testResults.suites);
+    total = allTests.length;
+    passed = allTests.filter((t: any) => t.results?.[0]?.status === 'passed').length;
+    failed = allTests.filter((t: any) => t.results?.[0]?.status === 'failed').length;
+    skipped = allTests.filter((t: any) => t.results?.[0]?.status === 'skipped').length;
+    // Duration (sum of all test durations in seconds)
+    const totalMs = allTests.reduce((sum: number, t: any) => sum + (t.results?.[0]?.duration || 0), 0);
+    duration = totalMs > 0 ? `${Math.floor(totalMs / 60000)}m ${Math.round((totalMs % 60000) / 1000)}s` : 'N/A';
+  }
+  // Date/time
+  const now = new Date();
+  const date = now.toISOString().slice(0, 10);
+  const time = now.toTimeString().slice(0, 5);
+
+  // Generate Teams message
+  const teamsMsg = generateTeamsMessage({
+    env,
+    total,
+    passed,
+    failed,
+    skipped,
+    duration,
+    htmlUrl,
+    allureUrl,
+    date,
+    time
+  });
+
+  // Post to Teams
+  const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
+  if (webhookUrl) {
+    const fetchFn: any = typeof fetch === 'function'
+      ? fetch
+      : (...args: any[]) => import('node-fetch').then(({default: fetch}) => (fetch as any)(...args));
+    const message = {
+      '@type': 'MessageCard',
+      '@context': 'http://schema.org/extensions',
+      'text': teamsMsg
+    };
+    try {
+      const response = await fetchFn(webhookUrl, {
+        method: 'POST',
+        body: JSON.stringify(message),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      console.log('Teams response status:', response.status);
+      let responseText = '';
+      try { responseText = await response.text(); } catch {}
+      console.log('Teams response body:', responseText);
+      if (response.ok) {
+        console.log('Teams notification sent successfully.');
+      } else {
+        console.log('Teams notification failed to send.');
+      }
+    } catch (err) {
+      console.error('ERROR posting to Teams:', err);
+    }
   } else {
-    console.log('DEBUG: No test results to send.');
+    console.error('ERROR: TEAMS_WEBHOOK_URL not set');
   }
-  
+
   // Print summary
   console.log('📊 Test Summary:');
   console.log(`   Duration: ${Math.round((Date.now() - new Date(process.env.TEST_START_TIME || Date.now()).getTime()) / 1000)}s`);
-  
   console.log('✅ Enhanced global teardown completed');
 }
 

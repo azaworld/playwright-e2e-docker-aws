@@ -1,12 +1,9 @@
-import { defineConfig, devices } from '@playwright/test';
+process.env.DOTENV_CONFIG_QUIET = 'true';
+import dotenv from 'dotenv';
+import path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '.env') });
 
-/**
- * Read environment variables from file.
- * https://github.com/motdotla/dotenv
- */
-// import dotenv from 'dotenv';
-// import path from 'path';
-// dotenv.config({ path: path.resolve(__dirname, '.env') });
+import { defineConfig, devices } from '@playwright/test';
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -23,9 +20,11 @@ export default defineConfig({
   workers: 1,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
+    ['list'],
     ['html'],
-    ['./tests/always-json-reporter.js'],
-    ['junit', { outputFile: 'test-results/results.xml' }]
+    ['allure-playwright'],
+    ['./tests/utils/always-json-reporter.ts'],
+    ['json', { outputFile: 'test-results/playwright-report.json' }],
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {

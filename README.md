@@ -38,10 +38,92 @@ Create a `.env` file in the root directory:
 
 ```env
 # Teams webhook URL for notifications (optional)
-TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/f09d8313-dfc5-42ef-b415-94fdfed4c2fe@7c371ac5-901e-4979-be25-cf17d828f722/IncomingWebhook/79bc773885504f31822e94cb119034ed/c5972fa6-0086-47d8-a1b1-612941007b65/V2ookp-hy7EeJ1_-G0WzuBPFGZ5MJ8UxFFctCv-T8dhrA1
+TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/....
 
 # Test configuration
 TEST_TIMEOUT=60000
+```
+
+## 🐳 Docker Deployment
+
+### Local Docker Setup
+
+```bash
+# Build Docker image
+npm run docker:build
+
+# Run tests in Docker
+npm run docker:run
+
+# Or use Docker Compose
+npm run docker:compose:up
+npm run docker:compose:logs
+```
+
+### AWS Server Deployment
+
+The project is fully containerized and ready for AWS deployment with automated scheduling.
+
+#### Prerequisites
+- AWS EC2 instance (Ubuntu 20.04+ recommended)
+- SSH access to the server
+- Docker and Docker Compose (installed automatically by deploy script)
+
+#### Quick Deployment
+
+```bash
+# 1. Ensure your .env file is configured
+echo "TEAMS_WEBHOOK_URL=your_webhook_url" > .env
+
+# 2. Run the deployment script
+npm run deploy:aws
+```
+
+#### Manual Deployment Steps
+
+```bash
+# 1. SSH to your AWS server
+ssh arifuz@54.215.243.212
+
+# 2. Create project directory
+mkdir -p ~/fur4-playwright
+cd ~/fur4-playwright
+
+# 3. Copy project files (from your local machine)
+scp -r . arifuz@54.215.243.212:~/fur4-playwright/
+
+# 4. Build and start containers
+docker-compose build
+docker-compose up -d
+
+# 5. Set up PM2 for scheduling
+pm2 start ecosystem.config.js
+pm2 save
+pm2 startup
+```
+
+#### Server Configuration
+
+- **Server IP:** 54.215.243.212
+- **Username:** arifuz
+- **Port:** 22
+- **Test Schedule:** Every 15 minutes
+- **Logs:** `/home/arifuz/fur4-playwright/logs/`
+
+#### Monitoring Commands
+
+```bash
+# View container logs
+ssh arifuz@54.215.243.212 'cd ~/fur4-playwright && docker-compose logs -f'
+
+# Check PM2 status
+ssh arifuz@54.215.243.212 'pm2 status'
+
+# View PM2 logs
+ssh arifuz@54.215.243.212 'pm2 logs'
+
+# Restart services
+ssh arifuz@54.215.243.212 'cd ~/fur4-playwright && docker-compose restart'
 ```
 
 ## 🧪 Running Tests
@@ -77,6 +159,7 @@ npm run test:debug
 # Open HTML report
 npm run report
 ```
+> **Note:** Do not run `npx playwright show-report` as part of your automated test scripts (like `npm run test:teams`). Let the script finish completely to ensure Teams notifications and S3 uploads work. Run `npx playwright show-report` separately if you want to view the report locally.
 
 ## 🔍 Real-Time Monitoring
 
@@ -125,6 +208,8 @@ npm run monitor:continuous 10
 
 The test suite automatically sends notifications to Microsoft Teams when tests complete.
 
+> **Important:** For `npm run test:teams`, do not interrupt the process. Let it finish on its own. If you stop it early (e.g., with Ctrl+C), the upload and Teams notification steps will not run.
+
 ### Setup Teams Webhook
 
 1. In your Teams channel, go to **Connectors**
@@ -132,7 +217,7 @@ The test suite automatically sends notifications to Microsoft Teams when tests c
 3. Copy the webhook URL
 4. Add to your `.env` file:
    ```env
-   TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/f09d8313-dfc5-42ef-b415-94fdfed4c2fe@7c371ac5-901e-4979-be25-cf17d828f722/IncomingWebhook/79bc773885504f31822e94cb119034ed/c5972fa6-0086-47d8-a1b1-612941007b65/V2ookp-hy7EeJ1_-G0WzuBPFGZ5MJ8UxFFctCv-T8dhrA1
+   TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/
    ```
 
 ### Notification Features
@@ -224,10 +309,18 @@ crontab -e
 ### Test Structure
 ```
 tests/
-├── fur4-main-site.spec.ts      # Main site tests
-├── fur4-referral-site.spec.ts  # Referral site tests
-├── global-setup.ts             # Test initialization
-└── global-teardown.ts          # Results processing & notifications
+├── fur4-main/                # Main site test suites
+│   ├── fur4-main-site.spec.ts
+│   ├── critical-flows.spec.ts
+├── fur4-referral/            # Referral site test suites
+│   └── fur4-referral-site.spec.ts
+├── utils/                    # Shared utility/helper functions and reporters
+│   ├── helpers.ts
+│   ├── always-json-reporter.ts
+│   ├── always-json-reporter.js
+│   ├── real-time-monitor.ts
+│   └── send-teams-report.ts
+└── fixtures/                 # Test data, mock files, etc. (optional, for future use)
 ```
 
 ## 🐛 Troubleshooting
@@ -248,6 +341,11 @@ tests/
 - Check Teams channel permissions
 - Review console logs for errors
 
+#### Docker Issues
+- Ensure Docker and Docker Compose are installed
+- Check container logs: `docker-compose logs`
+- Verify environment variables are set correctly
+
 ### Debug Mode
 ```bash
 # Run specific test with debug
@@ -255,6 +353,9 @@ npx playwright test tests/fur4-main-site.spec.ts --debug
 
 # Run with headed browser
 npx playwright test --headed
+
+# Debug Docker container
+docker-compose exec playwright-tests bash
 ```
 
 ## 📈 Monitoring
@@ -279,3 +380,37 @@ npx playwright test --headed
 ## 📝 License
 
 ISC License - see LICENSE file for details. 
+
+## Project Structure
+
+```
+FUR-Refer/
+├── tests/
+│   ├── fur4-main/                # Main site test suites
+│   ├── fur4-referral/            # Referral site test suites
+│   ├── utils/                    # Shared utility/helper functions and reporters
+│   │   ├── helpers.ts
+│   │   ├── always-json-reporter.ts
+│   │   ├── always-json-reporter.js
+│   │   ├── real-time-monitor.ts
+│   │   └── send-teams-report.ts
+│   └── fixtures/                 # Test data, mock files, etc. (optional, for future use)
+├── page-objects/
+│   ├── fur4/                     # Main site page objects
+│   └── refer/                    # Referral site page objects
+├── playwright.config.ts          # Playwright configuration
+├── .env                          # Environment variables
+├── Dockerfile, docker-compose.yml
+├── upload-playwright-report-to-s3.js
+├── tests/send-teams-report.js
+├── test-results/                 # Test output (ignored by git)
+├── playwright-report/            # HTML report output (ignored by git)
+└── ...
+```
+
+- **tests/utils/**: Place any shared helper functions here (e.g., random data generators, custom assertions).
+- **tests/fixtures/**: Place any static test data, mock files, or fixtures here.
+- **page-objects/**: All POM classes, organized by domain.
+- **test-results/** and **playwright-report/**: Output folders, auto-generated.
+
+This structure follows industry best practices for scalable, maintainable Playwright E2E projects. 

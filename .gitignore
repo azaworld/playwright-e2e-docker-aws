@@ -1,7 +1,20 @@
-
 # Playwright
 node_modules/
 /test-results/
 /playwright-report/
 /blob-report/
-/playwright/.cache/
+/playwright/.cache/.env
+/.env
+.env
+
+tests/fixtures/*.json # Ignore JSON fixtures, use TypeScript fixtures instead
+
+# Playwright artifacts
+**/trace/
+**/traces/
+**/screenshots/
+**/videos/
+**/*.trace.zip
+**/*.webm
+**/*.png
+**/*.mp4
