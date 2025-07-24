@@ -1,0 +1,50 @@
+image: docker:24.0.2
+
+options:
+  size: 2x
+
+pipelines:
+  branches:
+    new-main:
+      - step:
+          name: Build & Run Playwright Docker
+          services:
+            - docker
+          caches:
+            - docker
+          script:
+            - docker build -t fur4-tests .
+            - docker run \
+                --env TEAMS_WEBHOOK_URL=$TEAMS_WEBHOOK_URL \
+                --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+                --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+                --env AWS_S3_BUCKET=$AWS_S3_BUCKET \
+                fur4-tests
+          artifacts:
+            - playwright-report/**
+            - test-results/**
+  schedules:
+    - cron: "*/55 * * * *"
+      branches:
+        - new-main
+      step:
+        name: Scheduled Playwright E2E (every 55 min)
+        services:
+          - docker
+        caches:
+          - docker
+        script:
+          - docker build -t fur4-tests .
+          - docker run \
+              --env TEAMS_WEBHOOK_URL=$TEAMS_WEBHOOK_URL \
+              --env AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+              --env AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+              --env AWS_S3_BUCKET=$AWS_S3_BUCKET \
+              fur4-tests
+        artifacts:
+          - playwright-report/**
+          - test-results/**
+definitions:
+  services:
+    docker:
+      memory: 4096 
