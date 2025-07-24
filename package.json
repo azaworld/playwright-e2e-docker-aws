@@ -25,7 +25,7 @@
     "docker:compose:down": "docker-compose down",
     "docker:compose:logs": "docker-compose logs -f",
     "deploy:aws": "chmod +x deploy.sh && ./deploy.sh",
-    "test:ci": "npx playwright test && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/send-teams-report.ts",
+    "test:ci": "npx playwright test --reporter=list,json,html && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/notifyTeams.ts",
     "allure:generate": "npx allure generate ./allure-results --clean -o ./allure-report",
     "allure:open": "npx allure open \"./allure-report\"",
     "test:allure": "npx playwright test && npx allure serve allure-results",

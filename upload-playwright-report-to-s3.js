@@ -44,12 +44,13 @@ async function uploadDirToS3(localDir, s3Prefix) {
   for (const filePath of files) {
     const s3Key = path.join(s3Prefix, path.relative(localDir, filePath)).replace(/\\/g, '/');
     const fileContent = fs.readFileSync(filePath);
-    await s3.putObject({
+    const params = {
       Bucket: AWS_S3_BUCKET,
       Key: s3Key,
       Body: fileContent,
       ContentType: getContentType(filePath)
-    }).promise();
+    };
+    await s3.putObject(params).promise();
     console.log(`Uploaded: ${s3Key}`);
   }
 }

@@ -43,7 +43,11 @@ function parseResults(resultsPath: string) {
         if (suite.specs) {
           for (const spec of suite.specs) {
             for (const test of spec.tests) {
-              allTests.push(test);
+              allTests.push({
+                ...test,
+                file: spec.file,
+                title: spec.title
+              });
             }
           }
         }
@@ -56,7 +60,12 @@ function parseResults(resultsPath: string) {
     const skipped = allTests.filter(t => t.results?.[0]?.status === 'skipped').length;
     const durationSec = allTests.reduce((sum, t) => sum + (t.results?.[0]?.duration || 0), 0) / 1000;
     const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
-    return { total, passed, failed, skipped, durationSec, passPercent };
+    // Add failed details
+    const failedDetails = allTests.filter(t => t.results?.[0]?.status === 'failed').map(t => {
+      const error = t.results?.[0]?.error?.message || '';
+      return `• **${t.title}**\n  File: \`${t.file}\`\n  Error: \`${error.substring(0, 300)}${error.length > 300 ? '...' : ''}\``;
+    });
+    return { total, passed, failed, skipped, durationSec, passPercent, failedDetails };
   } catch {
     return null;
   }
@@ -87,11 +96,19 @@ async function uploadHtmlReport(): Promise<string | null> {
   }
 }
 
+function formatDuration(seconds: number | string): string {
+  if (typeof seconds === 'string' || isNaN(Number(seconds))) return 'N/A';
+  const s = Math.floor(Number(seconds));
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  return `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+}
+
 /**
  * Build a beautiful, markdown-formatted Teams message.
  */
 function buildTeamsMessage({
-  passed, failed, skipped, total, durationSec, passPercent, env, dateStr, htmlUrl, allureUrl
+  passed, failed, skipped, total, durationSec, passPercent, env, dateStr, htmlUrl, failedDetails
 }: {
   passed: number | string,
   failed: number | string,
@@ -102,30 +119,49 @@ function buildTeamsMessage({
   env: string,
   dateStr: string,
   htmlUrl: string | null,
-  allureUrl?: string
+  failedDetails?: string[]
 }) {
-  const allPassed = Number(failed) === 0 && Number(total) > 0;
-  const statusLine = allPassed
-    ? '🟢 **All Playwright Tests Passed!**'
-    : '🔴 **Some Playwright Tests Failed!**';
-  const statsLine = `✅ **Passed:** ${passed}  |  ❌ **Failed:** ${failed}  |  ⏭️ **Skipped:** ${skipped}  |  🧮 **Total:** ${total}`;
-  const durationLine = `⏱️ **Duration:** ${durationSec !== 'N/A' ? durationSec + 's' : 'N/A'}  |  📊 **Pass %:** ${passPercent}%`;
-  const envLine = `🌐 **Env:** ${env}  |  📅 **Date:** ${dateStr}`;
-  const htmlLine = htmlUrl
-    ? '🔵 [**View HTML Report**](' + htmlUrl + ')'
-    : '🔎 **HTML Report unavailable**';
-  const allureLine = allureUrl
-    ? '🟣 [**View Allure Report**](' + allureUrl + ')'
-    : '';
+  const portalName = 'FUR4 Portal';
+  const failedCount = Number(failed);
+  const status_emoji = failedCount === 0 ? '🟩' : '🟥';
+  const status_message = failedCount === 0
+    ? 'All Playwright Tests Passed!'
+    : 'Some Playwright Tests Failed!';
+  const footer_message = failedCount === 0
+    ? '🎉 All tests passed successfully!'
+    : '⚠️ Attention Required: Some tests failed. Please review the report.';
+  const duration = formatDuration(durationSec);
+  const report_url = htmlUrl || 'HTML Report unavailable';
+  const environment = env;
+  const date_time = dateStr;
+  const passed_count = passed;
+  const skipped_count = skipped;
+  const total_count = total;
+  const pass_percent = passPercent;
+
+  let failedBlock = '';
+  if (failedDetails && failedDetails.length > 0) {
+    failedBlock = '\n❌ **Failed Test Details:**\n' + failedDetails.join('\n\n');
+  }
+
   return [
-    statusLine,
+    `${status_emoji} **${portalName}: ${status_message}**`,
     '',
-    statsLine,
-    durationLine,
-    envLine,
+    `✅ Passed:    ${passed_count}`,
+    `❌ Failed:    ${failedCount}`,
+    `⏭️ Skipped:   ${skipped_count}`,
+    `🧮 Total:     ${total_count}`,
     '',
-    htmlLine,
-    allureLine
+    `⏱️ Duration:  ${duration}`,
+    `📊 Pass %:    ${pass_percent}%`,
+    '',
+    `🌐 Env:       ${environment}`,
+    `📅 Date:      ${date_time}`,
+    '',
+    `🔗 [View HTML Report](${report_url})`,
+    '',
+    footer_message,
+    failedBlock
   ].filter(Boolean).join('\n');
 }
 
@@ -138,9 +174,9 @@ function buildTeamsMessage({
   ];
   const resultsPath = possibleResults.find(p => fs.existsSync(p));
   const metrics = resultsPath ? (parseResults(resultsPath) || {
-    total: 0, passed: 0, failed: 0, skipped: 0, durationSec: 'N/A', passPercent: 'N/A'
+    total: 0, passed: 0, failed: 0, skipped: 0, durationSec: 'N/A', passPercent: 'N/A', failedDetails: []
   }) : {
-    total: 0, passed: 0, failed: 0, skipped: 0, durationSec: 'N/A', passPercent: 'N/A'
+    total: 0, passed: 0, failed: 0, skipped: 0, durationSec: 'N/A', passPercent: 'N/A', failedDetails: []
   };
 
   // 2. Upload HTML report
@@ -154,8 +190,7 @@ function buildTeamsMessage({
     ...metrics,
     env: ENV,
     dateStr,
-    htmlUrl,
-    allureUrl: ALLURE_REPORT_URL
+    htmlUrl
   });
 
   // 5. Send to Teams

@@ -161,6 +161,66 @@ npm run report
 ```
 > **Note:** Do not run `npx playwright show-report` as part of your automated test scripts (like `npm run test:teams`). Let the script finish completely to ensure Teams notifications and S3 uploads work. Run `npx playwright show-report` separately if you want to view the report locally.
 
+## 🏁 Full E2E Test, Report, S3 Upload, and Teams Notification Workflow
+
+### One-Command CI Workflow
+
+To run all Playwright E2E tests, generate HTML/JSON reports, upload the HTML report to S3, and send a detailed Microsoft Teams notification, use:
+
+```bash
+npm run test:ci
+```
+
+This script will:
+- Run all Playwright tests (using your config and reporters)
+- Generate HTML and JSON reports
+- Upload the HTML report to your configured S3 bucket
+- Send a Teams message with test stats, pass/fail/skip counts, duration, environment, date, and a link to the S3-hosted HTML report
+
+> **Note:** Make sure your `.env` file is configured with all required variables (S3, Teams webhook, Playwright base URLs, etc).
+
+### Manual Step-by-Step Workflow
+
+If you want to run each step manually:
+
+1. **Run the tests:**
+   ```bash
+   npx playwright test
+   ```
+2. **Upload the HTML report to S3:**
+   ```bash
+   ts-node tests/utils/upload-playwright-report-to-s3.ts
+   ```
+3. **Send the Teams notification:**
+   ```bash
+   ts-node tests/utils/notifyTeams.ts
+   ```
+
+### Docker Usage
+
+If you want to run the workflow in Docker (for CI/CD consistency):
+
+```bash
+docker-compose up --build
+```
+
+Or build and run manually:
+
+```bash
+docker build -t fur4-tests .
+docker run --env-file .env fur4-tests
+```
+
+### Troubleshooting
+- If you get errors about missing reports, make sure you’re not overriding the reporter config on the CLI.
+- If you want to open the HTML report locally:
+  ```bash
+  npx playwright show-report
+  ```
+- For Teams or S3 issues, check your `.env` and logs for errors.
+
+---
+
 ## 🔍 Real-Time Monitoring
 
 ### Single Monitoring Cycle
