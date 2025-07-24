@@ -1,0 +1,12 @@
+Image: {
+  src: '/_next/image?url=https%3A%2F%2Fd2vvfk3r26iof6.cloudfront.net%2Fimages%2Fmore_404448215a.png&w=640&q=75',
+  alt: '2 brushes',
+  cls: 'more-effective-image max-md:mx-auto opacity-0 md:opacity-100 md:absolute lg:static md:bottom-0 md:right-[calc(329px+5vw-128.5px)] ',
+  opacity: '1'
+}
+Image: {
+  src: '/_next/image?url=https%3A%2F%2Fd2vvfk3r26iof6.cloudfront.net%2Fimages%2Fkappframework_T_Ibj_Wx_1_1_27439dfe46.png&w=384&q=75',
+  alt: '2 brushes',
+  cls: 'max-md:mx-auto',
+  opacity: '1'
+}

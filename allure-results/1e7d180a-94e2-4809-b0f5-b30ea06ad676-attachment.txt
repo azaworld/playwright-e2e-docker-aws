@@ -1,0 +1,8 @@
+Newsletter section style info: {
+  fontFamily: '__sfProDisplay_d68518, __sfProDisplay_Fallback_d68518, sans-serif',
+  fontWeight: '500',
+  color: 'rgb(36, 36, 36)',
+  backgroundColor: 'rgba(0, 0, 0, 0)',
+  borderColor: 'rgb(226, 232, 240)',
+  textAlign: 'start'
+}

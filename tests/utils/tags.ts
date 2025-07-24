@@ -32,4 +32,30 @@ export const TAGS = {
       R004: '@refer:004',
     },
   },
-}; 
+};
+
+export enum Type {
+  FUNCTIONAL = '@FUNCTIONAL',
+  SMOKE = '@SMOKE',
+  LOAD = '@LOAD',
+  HEADER = '@HEADER',
+  VISUAL = '@VISUAL',
+  BRANDING = '@BRANDING',
+  HERO = '@HERO',
+  CONTENT = '@CONTENT',
+  IMAGE = '@IMAGE',
+  BUTTON = '@BUTTON',
+  ICON = '@ICON',
+  MENU = '@MENU',
+  NAVIGATION = '@NAVIGATION',
+  WIDGET = '@WIDGET',
+  CHAT = '@CHAT',
+  FOOTER = '@FOOTER',
+  UI = '@UI',
+  TOOLTIP = '@TOOLTIP',
+  LAYOUT = '@LAYOUT',
+  USABILITY = '@USABILITY',
+  SECTION = '@SECTION',
+  SCROLL = '@SCROLL',
+  NEWSLETTER = '@NEWSLETTER',
+} 

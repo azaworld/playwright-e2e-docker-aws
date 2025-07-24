@@ -2,6 +2,8 @@ process.env.DOTENV_CONFIG_QUIET = 'true';
 import dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve(__dirname, '.env') });
+dotenv.config({ path: path.resolve(__dirname, '.env') });
+
 
 import { defineConfig, devices } from '@playwright/test';
 
@@ -28,6 +30,10 @@ export default defineConfig({
   ],
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
+    headless: true,
+    launchOptions: {
+      // slowMo removed
+    },
     /* Base URL to use in actions like `await page.goto('/')`. */
     // baseURL: 'http://localhost:3000',
 
@@ -41,13 +47,17 @@ export default defineConfig({
     video: 'retain-on-failure',
     
     /* Set viewport size */
-    viewport: { width: 1280, height: 720 },
+    viewport: { width: 1440, height: 900 },
     
     /* Set timeout for actions */
     actionTimeout: 30000,
     
     /* Set navigation timeout */
     navigationTimeout: 60000,
+
+    extraHTTPHeaders: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    },
   },
 
   /* Configure projects for major browsers */
@@ -91,6 +101,13 @@ export default defineConfig({
   /* Global setup and teardown for Teams notifications */
   globalSetup: require.resolve('./tests/global-setup.ts'),
   globalTeardown: require.resolve('./tests/global-teardown.ts'),
+  /* Test timeout */
+  timeout: 60000,
+
+  /* Expect timeout */
+  expect: {
+    timeout: 10000,
+  },
 
   /* Run your local dev server before starting the tests */
   // webServer: {
