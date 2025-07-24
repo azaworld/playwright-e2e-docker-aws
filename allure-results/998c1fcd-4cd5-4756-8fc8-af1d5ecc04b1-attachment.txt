@@ -1,6 +1,0 @@
-PolyCarboMax section style info: {
-  fontFamily: '__fontDinCondensed_57266f, __fontDinCondensed_Fallback_57266f',
-  fontWeight: '700',
-  color: 'rgb(107, 114, 128)',
-  textAlign: 'start'
-}

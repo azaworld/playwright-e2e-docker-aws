@@ -1,8 +1,0 @@
-Protective storage case section style info: {
-  fontFamily: '__fontDinCondensed_57266f, __fontDinCondensed_Fallback_57266f',
-  fontWeight: '400',
-  color: 'rgb(36, 36, 36)',
-  textAlign: 'start',
-  grayColor: 'rgb(107, 114, 128)',
-  blueColor: 'rgb(0, 192, 243)'
-}
