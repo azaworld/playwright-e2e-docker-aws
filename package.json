@@ -26,10 +26,14 @@
     "docker:compose:logs": "docker-compose logs -f",
     "deploy:aws": "chmod +x deploy.sh && ./deploy.sh",
     "test:ci": "npx playwright test --reporter=list,json,html && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/notifyTeams.ts",
+    "test:ci:full": "npx playwright test --reporter=list,json,html && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/notifyTeams.ts",
+    "test:with-upload": "npx playwright test --reporter=list,json,html && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/notifyTeams.ts",
+    "test:complete": "npx playwright test --reporter=list,json,html && ts-node tests/utils/upload-playwright-report-to-s3.ts && ts-node tests/utils/notifyTeams.ts",
+    "test:teams:debug": "npx playwright test --reporter=list,json,html && ts-node tests/utils/notifyTeams.ts",
     "allure:generate": "npx allure generate ./allure-results --clean -o ./allure-report",
     "allure:open": "npx allure open \"./allure-report\"",
     "test:allure": "npx playwright test && npx allure serve allure-results",
-    "test:notify": "npx playwright test && npm run allure:generate && npx ts-node tests/utils/teamsNotifier.ts",
+    "test:notify": "npx playwright test && npm run allure:generate && npx ts-node tests/utils/notifyTeams.ts",
     "test:notify:all": "npx playwright test && npm run allure:generate && npx ts-node tests/utils/notifyTeams.ts"
   },
   "keywords": [

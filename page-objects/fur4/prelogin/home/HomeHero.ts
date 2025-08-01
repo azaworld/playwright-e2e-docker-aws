@@ -23,8 +23,8 @@ export class HomeHero {
     const baseUrl = process.env.FUR4_MAIN_URL;
     if (!baseUrl) throw new Error('FUR4_MAIN_URL is not set in environment variables!');
     await this.page.goto(baseUrl, { waitUntil: "domcontentloaded" });
-    await this.page.waitForSelector("body", { state: "visible", timeout: 15000 });
-    await this.logo.waitFor({ state: "visible", timeout: 15000 });
+      await this.page.waitForSelector("body", { state: "visible", timeout: 15000 });
+      await this.logo.waitFor({ state: "visible", timeout: 15000 });
   }
 
   async verifyPageLoad(): Promise<void> {
@@ -721,7 +721,7 @@ export class HomeHero {
   async isScrollToExploreTextVisible(): Promise<boolean> {
     try {
       await expect(this.getScrollToExploreText()).toBeVisible({ timeout: 5000 });
-      return true;
+    return true;
     } catch {
       return false;
     }

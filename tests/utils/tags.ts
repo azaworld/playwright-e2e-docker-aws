@@ -36,6 +36,7 @@ export const TAGS = {
 
 export enum Type {
   FUNCTIONAL = '@FUNCTIONAL',
+  FUNCTIONALITY = '@FUNCTIONALITY',
   SMOKE = '@SMOKE',
   LOAD = '@LOAD',
   HEADER = '@HEADER',
@@ -68,4 +69,20 @@ export enum Type {
   CART = '@CART',
   PRODUCTS = '@PRODUCTS',
   VIDEO = '@VIDEO',
+  BANNER = '@BANNER',
+  LINK = '@LINK',
+  PAGE_LOAD = '@PAGE_LOAD',
+  RESPONSIVE = '@RESPONSIVE',
+  MOBILE = '@MOBILE',
+  SEO = '@SEO',
+  ACCESSIBILITY = '@ACCESSIBILITY',
+  // Additional types for dealer-locator tests
+  MAP = '@MAP',
+  FORM = '@FORM',
+  NEGATIVE = '@NEGATIVE',
+  SEARCH = '@SEARCH',
+  BROWSER = '@BROWSER',
+  LOCATION = '@LOCATION',
+  DATA = '@DATA',
+  DYNAMIC = '@DYNAMIC',
 } 

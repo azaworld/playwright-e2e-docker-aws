@@ -2,6 +2,31 @@
 
 Automated Playwright tests for guest-visible areas of [fur4.com](https://fur4.com/) and [refer.fur4.com](https://refer.fur4.com/).
 
+## 🚀 **Quick Start - One Command Does Everything**
+
+```bash
+# Install dependencies
+npm install
+npm run install-browsers
+
+# Set up environment variables in .env file
+# (see Prerequisites section below)
+
+# Run complete test workflow
+npm run test:complete
+```
+
+**This single command will:**
+- ✅ Run all Playwright tests
+- ✅ Generate HTML and JSON reports
+- ✅ Upload reports to S3 with screenshots
+- ✅ Send detailed Teams notification
+
+**What you get:**
+- 📊 Local HTML report: `playwright-report/index.html`
+- ☁️ S3 hosted report: `https://fur4-playwright-reports.s3.amazonaws.com/playwright-report/index.html`
+- 📱 Teams message with test results and links
+
 ## 🎯 Test Objectives
 
 - **Homepage loads correctly** (no missing content or 404s)
@@ -128,38 +153,100 @@ ssh arifuz@54.215.243.212 'cd ~/fur4-playwright && docker-compose restart'
 
 ## 🧪 Running Tests
 
-### Run All Tests
+### 🎯 **ONE COMMAND SOLUTION**
+
+**For Complete Workflow (Recommended):**
 ```bash
-npm run test:all
+# Full test run with S3 upload and Teams notification
+npm run test:with-upload
 ```
 
-### Run Specific Test Suites
-```bash
-# Main site tests only
-npm run test:fur4
+**This single command does everything:**
+- ✅ Runs all Playwright tests
+- ✅ Generates HTML and JSON reports
+- ✅ Uploads reports to S3 with screenshots
+- ✅ Sends detailed Teams notification
 
-# Referral site tests only
-npm run test:refer
+### Command Comparison
 
-# Critical flows only (login, checkout, referrals)
-npm run test:critical
+| Command | HTML Report | JSON Results | S3 Upload | Teams Notification | Use Case |
+|---------|-------------|--------------|-----------|-------------------|----------|
+| `npm run test` | ✅ | ❌ | ❌ | ❌ | Quick local testing |
+| `npm run test:complete` | ✅ | ✅ | ✅ | ✅ | **Complete workflow** |
+| `npm run test:ci:full` | ✅ | ✅ | ✅ | ✅ | Production CI/CD |
+| `npm run test:notify` | ✅ | ✅ | ❌ | ✅ | Tests + Teams notification |
+| `npm run test:all` | ✅ | ✅ | ✅ | ✅ | Full reporting suite |
+
+### Prerequisites
+
+**1. Environment Variables (.env file):**
+```env
+# Required for S3 upload
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=us-east-1
+AWS_S3_BUCKET=fur4-playwright-reports
+AWS_S3_REPORT_PREFIX=playwright-report
+AWS_S3_SCREENSHOT_PREFIX=screenshots
+
+# Required for Teams notifications
+TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/...
+
+# Optional
+ENV=Production
 ```
 
-### Debug Mode
+**2. Install Dependencies:**
 ```bash
-# Run with headed browser (visible)
+npm install
+npm run install-browsers
+```
+
+### Why This Matters
+
+- **`npm run test`** only generates HTML reports
+- **`npm run test:with-upload`** generates both HTML AND JSON results
+- Teams notification needs JSON results for detailed metrics
+- S3 upload works better with complete data
+
+### Usage Examples
+
+**Daily Testing (Recommended):**
+```bash
+npm run test:complete
+```
+
+**Debug Mode (see browser):**
+```bash
 npm run test:headed
-
-# Run with debug mode
-npm run test:debug
 ```
 
-### View Reports
+**Specific Test Suites:**
+```bash
+npm run test:fur4        # Main site only
+npm run test:refer       # Referral site only
+npm run test:critical    # Critical flows only
+```
+
+**Quick Testing (no S3 upload):**
+```bash
+npm run test:notify      # Tests + Teams notification
+```
+
+**Full Reporting Suite:**
+```bash
+npm run test:all         # Tests + Allure + S3 + JSON reporter
+```
+
+### View Reports Locally
 ```bash
 # Open HTML report
 npm run report
+
+# Open Allure report
+npm run allure:open
 ```
-> **Note:** Do not run `npx playwright show-report` as part of your automated test scripts (like `npm run test:teams`). Let the script finish completely to ensure Teams notifications and S3 uploads work. Run `npx playwright show-report` separately if you want to view the report locally.
+> **Note:** Do not run `npx playwright show-report` as part of your automated test scripts. Let the script finish completely to ensure Teams notifications and S3 uploads work. Run `npx playwright show-report` separately if you want to view the report locally.
 
 ## 🏁 Full E2E Test, Report, S3 Upload, and Teams Notification Workflow
 
@@ -168,7 +255,7 @@ npm run report
 To run all Playwright E2E tests, generate HTML/JSON reports, upload the HTML report to S3, and send a detailed Microsoft Teams notification, use:
 
 ```bash
-npm run test:ci
+npm run test:with-upload
 ```
 
 This script will:
@@ -178,6 +265,25 @@ This script will:
 - Send a Teams message with test stats, pass/fail/skip counts, duration, environment, date, and a link to the S3-hosted HTML report
 
 > **Note:** Make sure your `.env` file is configured with all required variables (S3, Teams webhook, Playwright base URLs, etc).
+
+### What You Get After Running `npm run test:complete`
+
+**1. Local Reports:**
+- HTML report: `playwright-report/index.html`
+- JSON results: `test-results/playwright-report.json`
+- Screenshots: `playwright-report/data/`
+- Videos: `playwright-report/data/`
+
+**2. S3 Upload:**
+- HTML report: `https://fur4-playwright-reports.s3.amazonaws.com/playwright-report/index.html`
+- Screenshots: `https://fur4-playwright-reports.s3.amazonaws.com/screenshots/`
+- All files accessible via web browser
+
+**3. Teams Message:**
+- Test results summary with pass/fail/skip counts
+- Duration and pass percentage
+- Direct links to S3 reports
+- Environment and timestamp information
 
 ### Manual Step-by-Step Workflow
 
@@ -218,6 +324,43 @@ docker run --env-file .env fur4-tests
   npx playwright show-report
   ```
 - For Teams or S3 issues, check your `.env` and logs for errors.
+
+---
+
+## 🔧 Quick Troubleshooting
+
+**Common Issues & Solutions:**
+
+1. **Teams notification not working:**
+   - Check your `.env` file has `TEAMS_WEBHOOK_URL`
+   - Verify the webhook URL is correct
+   - Check Teams channel permissions
+
+2. **S3 upload failing:**
+   - Verify AWS credentials in `.env`
+   - Check S3 bucket permissions
+   - Ensure bucket exists and is accessible
+
+3. **Getting duplicate Teams messages:**
+   - Use `npm run test:with-upload` (not `npm run test:notify`)
+   - Don't run multiple notification scripts simultaneously
+
+4. **Tests timing out:**
+   - Increase timeout in `playwright.config.ts`
+   - Check site availability manually
+   - Verify network connectivity
+
+5. **View reports locally:**
+   ```bash
+   npm run report          # HTML report
+   npm run allure:open     # Allure report
+   ```
+
+6. **Debug test issues:**
+   ```bash
+   npm run test:headed     # See browser
+   npm run test:debug      # Debug mode
+   ```
 
 ---
 

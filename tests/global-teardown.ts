@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import dotenv from 'dotenv';
 dotenv.config();
-import { generateTeamsMessage } from './utils/teamsMessage';
+// Removed teamsMessage import - using inline function instead
 
 console.log('DEBUG: global-teardown.ts started');
 
@@ -251,6 +251,53 @@ async function waitForFileWithValidJson(filePath: string, retries = 10, delayMs 
     await new Promise(res => setTimeout(res, delayMs));
   }
   return false;
+}
+
+// Inline Teams message generator (replacing deleted teamsMessage.ts)
+function generateTeamsMessage({
+  env = 'N/A',
+  total = 0,
+  passed = 0,
+  failed = 0,
+  skipped = 0,
+  duration = 'N/A',
+  htmlUrl = '#',
+  allureUrl = '#',
+  date,
+  time
+}: {
+  env: string;
+  total: number;
+  passed: number;
+  failed: number;
+  skipped: number;
+  duration: string;
+  htmlUrl: string;
+  allureUrl: string;
+  date?: string;
+  time?: string;
+}): string {
+  const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
+  const now = new Date();
+  const dateStr = date || now.toISOString().slice(0, 10);
+  const timeStr = time || now.toTimeString().slice(0, 5);
+  const isPassed = failed === 0 && passed > 0;
+  const statusLine = isPassed ? '🟢 **All Playwright Tests Passed!**' : '🔴 **Some Playwright Tests Failed!**';
+  const statsLine = `✅ **Passed:** ${passed}\n❌ **Failed:** ${failed}\n⏭️ **Skipped:** ${skipped}\n🧮 **Total:** ${total}`;
+  const durationLine = `⏱️ **Duration:** ${duration}\n📊 **Pass %:** ${passPercent}%`;
+  const envLine = `🌐 **Env:** ${env}\n📅 **Date:** ${dateStr}, ${timeStr}`;
+  const htmlLine = htmlUrl && htmlUrl !== '#' ? '🔎 [**View HTML Report**](' + htmlUrl + ')' : '🔎 **HTML Report unavailable**';
+  const allureLine = allureUrl && allureUrl !== '#' ? '📊 [**View Allure Report**](' + allureUrl + ')' : '';
+  return [
+    statusLine,
+    '',
+    statsLine,
+    durationLine,
+    envLine,
+    '',
+    htmlLine,
+    allureLine
+  ].filter(Boolean).join('\n\n');
 }
 
 async function globalTeardown(config: FullConfig) {
