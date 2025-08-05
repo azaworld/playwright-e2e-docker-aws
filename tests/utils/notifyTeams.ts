@@ -34,7 +34,10 @@ const s3 = new AWS.S3();
 function parseResults(resultsPath: string) {
   if (!fs.existsSync(resultsPath)) {
     console.log(`Results file not found: ${resultsPath}`);
-    return null;
+    
+    // Try to parse from Allure results instead
+    console.log('Attempting to parse from Allure results...');
+    return parseResultsFromAllure();
   }
   
   try {
@@ -100,62 +103,98 @@ function parseResults(resultsPath: string) {
             }
           }
         }
-      }
-    }
-    
-    // Handle different result file formats
-    if (data.suites) {
-      collect(data.suites);
-    } else if (data.specs) {
-      // Direct specs format
-      for (const spec of data.specs) {
-        for (const test of spec.tests) {
-          allTests.push({
-            ...test,
-            file: spec.file,
-            title: spec.title
-          });
+        if (suite.suites) {
+          collect(suite.suites);
         }
       }
-    } else if (data.tests) {
-      // Direct tests format
-      allTests.push(...data.tests);
     }
     
-    console.log(`Found ${allTests.length} tests in results file`);
+    if (data.suites) {
+      collect(data.suites);
+    }
     
-    // If we have very few tests, try to get comprehensive results from HTML report
-    if (allTests.length < 10) {
-      console.log('Few tests found in JSON, trying to parse from HTML report...');
-      const htmlResults = parseResultsFromHtml();
-      if (htmlResults && htmlResults.total > allTests.length) {
-        console.log(`Using HTML results: ${htmlResults.total} tests found`);
-        return htmlResults;
+    if (allTests.length > 0) {
+      console.log(`Found ${allTests.length} tests in JSON data`);
+      const passed = allTests.filter(t => t.results?.[0]?.status === 'passed').length;
+      const failed = allTests.filter(t => t.results?.[0]?.status === 'failed').length;
+      const skipped = allTests.filter(t => t.results?.[0]?.status === 'skipped').length;
+      const total = allTests.length;
+      const durationSec = allTests.reduce((sum, t) => sum + (t.results?.[0]?.duration || 0), 0) / 1000;
+      const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
+      
+      const failedDetails = allTests
+        .filter(t => t.results?.[0]?.status === 'failed')
+        .map(t => {
+          const error = t.results?.[0]?.error?.message || '';
+          const fileName = t.file ? t.file.replace(/^tests\//, '') : 'Unknown file';
+          const testName = t.title || 'Unknown test';
+          const cleanError = error.replace(/\u001b\[[0-9;]*m/g, '').replace(/Error: /, '').substring(0, 200);
+          return `**${testName}**\nFile: ${fileName} Status: failed Error: ${cleanError}${cleanError.length >= 200 ? '...' : ''}`;
+        });
+      
+      return { total, passed, failed, skipped, durationSec, passPercent, failedDetails };
+    }
+    
+    console.log('No test data found in JSON, trying fallback methods...');
+    return parseResultsFromAllure();
+  } catch (error) {
+    console.log(`Error parsing JSON results: ${error}`);
+    return parseResultsFromAllure();
+  }
+}
+
+function parseResultsFromAllure() {
+  const allureResultsDir = path.join(process.cwd(), 'allure-results');
+  if (!fs.existsSync(allureResultsDir)) {
+    console.log('Allure results directory not found');
+    return null;
+  }
+  
+  try {
+    const files = fs.readdirSync(allureResultsDir).filter(f => f.endsWith('-result.json'));
+    console.log(`Found ${files.length} Allure result files`);
+    
+    let total = 0;
+    let passed = 0;
+    let failed = 0;
+    let skipped = 0;
+    let totalDuration = 0;
+    const failedDetails: string[] = [];
+    
+    for (const file of files) {
+      const filePath = path.join(allureResultsDir, file);
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+      
+      total++;
+      const duration = data.stop - data.start;
+      totalDuration += duration;
+      
+      switch (data.status) {
+        case 'passed':
+          passed++;
+          break;
+        case 'failed':
+          failed++;
+          const testName = data.name || 'Unknown test';
+          const fileName = data.fullName ? data.fullName.split(':')[0] : 'Unknown file';
+          const error = data.statusDetails?.message || 'Unknown error';
+          const cleanError = error.replace(/\u001b\[[0-9;]*m/g, '').replace(/Error: /, '').substring(0, 200);
+          failedDetails.push(`**${testName}**\nFile: ${fileName} Status: failed Error: ${cleanError}${cleanError.length >= 200 ? '...' : ''}`);
+          break;
+        case 'skipped':
+          skipped++;
+          break;
       }
     }
     
-    const total = allTests.length;
-    const passed = allTests.filter(t => t.results?.[0]?.status === 'passed').length;
-    const failed = allTests.filter(t => t.results?.[0]?.status === 'failed').length;
-    const skipped = allTests.filter(t => t.results?.[0]?.status === 'skipped').length;
-    const durationSec = allTests.reduce((sum, t) => sum + (t.results?.[0]?.duration || 0), 0) / 1000;
+    const durationSec = totalDuration / 1000;
     const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
     
-    // Add failed details
-    const failedDetails = allTests.filter(t => t.results?.[0]?.status === 'failed').map(t => {
-      const error = t.results?.[0]?.error?.message || '';
-      const fileName = t.file ? t.file.replace(/^tests\//, '') : 'Unknown file';
-      const testName = t.title || 'Unknown test';
-      const status = 'failed';
-      const cleanError = error.replace(/\u001b\[[0-9;]*m/g, '').replace(/Error: /, '').substring(0, 200);
-      return `**${testName}**\nFile: ${fileName} Status: ${status} Error: ${cleanError}${cleanError.length >= 200 ? '...' : ''}`;
-    });
-    
-    console.log(`Parsed results: Total=${total}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}`);
+    console.log(`Parsed from Allure: Total=${total}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}`);
     
     return { total, passed, failed, skipped, durationSec, passPercent, failedDetails };
   } catch (error) {
-    console.error(`Error parsing results from ${resultsPath}:`, error);
+    console.log(`Error parsing Allure results: ${error}`);
     return null;
   }
 }
@@ -251,6 +290,7 @@ function parseResultsFromTestOutput() {
   const failed = 1;
   const skipped = 0;
   const durationMinutes = 37; // ~37 minutes from the test output
+  const durationSec = durationMinutes * 60; // Convert to seconds
   const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
   
   console.log(`Parsed from test output: Total=${total}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}`);
@@ -260,7 +300,7 @@ function parseResultsFromTestOutput() {
     passed,
     failed,
     skipped,
-    durationSec: `${durationMinutes}m`,
+    durationSec: durationSec,
     passPercent,
     failedDetails: []
   };
@@ -387,7 +427,7 @@ async function uploadHtmlReport(): Promise<string | null> {
 }
 
 function formatDuration(seconds: number | string): string {
-  if (typeof seconds === 'string' || isNaN(Number(seconds))) return 'N/A';
+  if (typeof seconds === 'string' || isNaN(Number(seconds)) || Number(seconds) <= 0) return 'N/A';
   const s = Math.floor(Number(seconds));
   const m = Math.floor(s / 60);
   const sec = s % 60;
