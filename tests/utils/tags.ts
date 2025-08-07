@@ -85,4 +85,11 @@ export enum Type {
   LOCATION = '@LOCATION',
   DATA = '@DATA',
   DYNAMIC = '@DYNAMIC',
+  // Additional types for register page tests
+  OAUTH = '@OAUTH',
+  SOCIAL = '@SOCIAL',
+  SECURITY = '@SECURITY',
+  HAPPY_PATH = '@HAPPY_PATH',
+  // Additional types for UX
+  UX = '@UX',
 } 

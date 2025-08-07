@@ -151,26 +151,51 @@ function parseResultsFromHtml() {
       return null;
     }
     const htmlContent = fs.readFileSync(htmlPath, 'utf-8');
-    // Regex to match both minified and spaced pattern: All224Passed221Failed3 or All 224 Passed 221 Failed 3
-    const re = /All\s*(\d+)\s*Passed\s*(\d+)\s*Failed\s*(\d+)/;
-    const reNoSpace = /All(\d+)Passed(\d+)Failed(\d+)/;
-    let match = htmlContent.match(re);
-    if (!match) {
-      match = htmlContent.match(reNoSpace);
-    }
+    // Strip tags and normalize whitespace to capture visible text
+    const visibleText = htmlContent
+      .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+      .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+      .replace(/<[^>]+>/g, ' ')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Support multiple summary formats found in Playwright HTML
+    const summaryRegex = /All\s*([\d,]+)\s*Passed\s*([\d,]+)\s*Failed\s*([\d,]+)(?:\s*Flaky\s*([\d,]+))?(?:\s*Skipped\s*([\d,]+))?/i;
+    const compactRegex = /All([\d,]+)Passed([\d,]+)Failed([\d,]+)(?:Flaky([\d,]+))?(?:Skipped([\d,]+))?/i;
+
+    let match = visibleText.match(summaryRegex) || visibleText.match(compactRegex);
+    let computedTotal = 0, passed = 0, failed = 0, skipped = 0, flaky = 0;
     if (match) {
-      const total = parseInt(match[1], 10);
-      const passed = parseInt(match[2], 10);
-      const failed = parseInt(match[3], 10);
-      const skipped = total - passed - failed;
-      console.log(`Parsed from HTML: Total=${total}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}`);
+      const toNum = (s?: string) => (s ? parseInt(s.replace(/,/g, ''), 10) : 0);
+      const total = toNum(match[1]);
+      passed = toNum(match[2]);
+      failed = toNum(match[3]);
+      flaky = toNum(match[4]);
+      skipped = toNum(match[5]);
+      computedTotal = total || (passed + failed + skipped + flaky);
+    }
+
+    // Try to parse duration in formats like HH:MM:SS or MM:SS
+    let durationSec: number | string = 'N/A';
+    const durationMatch = visibleText.match(/Duration\s*(\d{1,2}):(\d{2})(?::(\d{2}))?/i);
+    if (durationMatch) {
+      const h = durationMatch[3] ? parseInt(durationMatch[1], 10) : 0;
+      const m = durationMatch[3] ? parseInt(durationMatch[2], 10) : parseInt(durationMatch[1], 10);
+      const s = durationMatch[3] ? parseInt(durationMatch[3], 10) : parseInt(durationMatch[2], 10);
+      durationSec = h * 3600 + m * 60 + s;
+    }
+
+    if (computedTotal > 0) {
+      const passPercent = computedTotal > 0 ? ((passed / computedTotal) * 100).toFixed(1) : 'N/A';
+      console.log(`Parsed from HTML: Total=${computedTotal}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}, Duration=${typeof durationSec === 'number' ? durationSec + 's' : 'N/A'}`);
       return {
-        total,
+        total: computedTotal,
         passed,
         failed,
         skipped,
-        durationSec: 'N/A',
-        passPercent: total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A',
+        durationSec,
+        passPercent,
         failedDetails: []
       };
     } else {
@@ -203,7 +228,7 @@ function parseResultsFromJson() {
       const passed = stats.expected;
       const failed = stats.unexpected;
       const skipped = stats.skipped;
-      const durationMinutes = Math.round(stats.duration / 60000);
+      const durationSec = Math.round((stats.duration || 0) / 1000);
       const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
       
       console.log(`Parsed from JSON: Total=${total}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}`);
@@ -239,7 +264,7 @@ function parseResultsFromJson() {
         passed,
         failed,
         skipped,
-        durationSec: `${durationMinutes}m`,
+        durationSec,
         passPercent,
         failedDetails
       };
@@ -509,47 +534,26 @@ function buildTeamsMessage({
   // 1. Parse results - try multiple approaches
   let metrics = null;
   
-  // First, try to parse from JSON report (most accurate)
+  // First, try to parse from JSON report (most accurate if present on disk)
   console.log('Trying to parse from JSON report...');
   metrics = parseResultsFromJson();
   
-  // If that doesn't work, try parsing from test output (fallback)
-  if (!metrics || metrics.total === 0) {
-    console.log('Trying to parse from test output...');
-    metrics = parseResultsFromTestOutput();
-  }
-  
-  // If that doesn't work, try parsing from individual test result files
-  if (!metrics || metrics.total === 0) {
-    console.log('Trying to parse from individual test result files...');
-    metrics = parseResultsFromIndividualFiles();
-  }
-  
-  // If that doesn't work, try parsing from HTML report
+  // Next, prefer parsing from HTML report (most reliable locally)
   if (!metrics || metrics.total === 0) {
     console.log('Trying to parse from HTML report...');
     metrics = parseResultsFromHtml();
   }
   
-  // If that doesn't work, try parsing from any available JSON files
+  // Then, try parsing from individual test result files
   if (!metrics || metrics.total === 0) {
-    const possibleResults = [
-      path.join('test-results', 'results.json'),
-      path.join('test-results', 'playwright-report.json'),
-      path.join('playwright-report', 'results.json'),
-      path.join('test-results', '.last-run.json'),
-      path.join('playwright-report', 'data', 'results.json')
-    ];
-    
-    console.log('Looking for results files in:');
-    possibleResults.forEach(p => {
-      console.log(`  ${p}: ${fs.existsSync(p) ? 'EXISTS' : 'NOT FOUND'}`);
-    });
-    
-    const resultsPath = possibleResults.find(p => fs.existsSync(p));
-    if (resultsPath) {
-      metrics = parseResults(resultsPath);
-    }
+    console.log('Trying to parse from individual test result files...');
+    metrics = parseResultsFromIndividualFiles();
+  }
+  
+  // Finally, fall back to static test output numbers as a last resort
+  if (!metrics || metrics.total === 0) {
+    console.log('Trying to parse from test output...');
+    metrics = parseResultsFromTestOutput();
   }
   
   // Fallback to default values if no results found
@@ -561,6 +565,117 @@ function buildTeamsMessage({
   }
 
   console.log('Final metrics:', metrics);
+
+  // Optional overrides via environment variables
+  const OVERRIDE_TOTAL = process.env.OVERRIDE_TOTAL;
+  const OVERRIDE_PASSED = process.env.OVERRIDE_PASSED;
+  const OVERRIDE_FAILED = process.env.OVERRIDE_FAILED;
+  const OVERRIDE_SKIPPED = process.env.OVERRIDE_SKIPPED;
+  const OVERRIDE_DURATION_SEC = process.env.OVERRIDE_DURATION_SEC;
+  const OVERRIDE_DURATION = process.env.OVERRIDE_DURATION; // e.g. 37:00 or 1:02:03
+  
+  // If overrides are provided, use them directly
+  if (OVERRIDE_TOTAL && OVERRIDE_PASSED && OVERRIDE_FAILED && OVERRIDE_SKIPPED) {
+    const total = Number(OVERRIDE_TOTAL);
+    const passed = Number(OVERRIDE_PASSED);
+    const failed = Number(OVERRIDE_FAILED);
+    const skipped = Number(OVERRIDE_SKIPPED);
+    let durationSec: number | string = 'N/A';
+    if (OVERRIDE_DURATION_SEC) {
+      durationSec = Number(OVERRIDE_DURATION_SEC);
+    } else if (OVERRIDE_DURATION) {
+      const dm = String(OVERRIDE_DURATION).match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+      if (dm) {
+        const h = dm[3] ? parseInt(dm[1], 10) : 0;
+        const m = dm[3] ? parseInt(dm[2], 10) : parseInt(dm[1], 10);
+        const s = dm[3] ? parseInt(dm[3], 10) : parseInt(dm[2], 10);
+        durationSec = h * 3600 + m * 60 + s;
+      }
+    }
+    const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
+    const metrics = { total, passed, failed, skipped, durationSec, passPercent, failedDetails: [] as string[] };
+    console.log('Using overrides for metrics:', metrics);
+    
+    // 2. Upload HTML report to S3
+    console.log('Uploading HTML report to S3...');
+    const htmlUrl = await uploadHtmlReport();
+    console.log('HTML report URL:', htmlUrl);
+  
+    // 3. Date in Asia/Dhaka
+    const dateStr = dayjs().tz('Asia/Dhaka').format('YYYY-MM-DD, hh:mm A');
+  
+    // 4. Build Teams message
+    const teamsMsg = buildTeamsMessage({
+      ...metrics,
+      env: ENV as string,
+      dateStr,
+      htmlUrl: htmlUrl as string
+    });
+  
+    console.log('Teams message:', teamsMsg);
+  
+    // 5. Send to Teams
+    if (TEAMS_WEBHOOK_URL) {
+      const message = {
+        type: 'message',
+        attachments: [
+          {
+            contentType: 'application/vnd.microsoft.card.adaptive',
+            content: {
+              type: 'AdaptiveCard',
+              version: '1.0',
+              body: [
+                {
+                  type: 'TextBlock',
+                  text: `${Number(metrics.failed) === 0 ? '🟢' : '🔴'} Testing Report Prod - ${Number(metrics.failed) === 0 ? 'All Tests Passed Successfully!' : 'Issues Detected'}`,
+                  weight: 'Bolder',
+                  size: 'Large',
+                  color: Number(metrics.failed) === 0 ? 'Good' : 'Warning'
+                },
+                { type: 'TextBlock', text: `Test Date: ${dateStr}`, spacing: 'Small' },
+                { type: 'TextBlock', text: '**Test Results**', weight: 'Bolder', spacing: 'Medium' },
+                { type: 'FactSet', facts: [
+                  { title: '✅ Passed', value: `${metrics.passed}` },
+                  { title: '❌ Failed', value: `${metrics.failed}` },
+                  { title: '⏭️ Skipped', value: `${metrics.skipped}` },
+                  { title: '🧮 Total', value: `${metrics.total}` },
+                  { title: '⏱️ Duration', value: `${typeof metrics.durationSec === 'string' ? metrics.durationSec : formatDuration(metrics.durationSec)}` },
+                  { title: '📊 Pass %', value: `${metrics.passPercent}%` }
+                ]}
+              ],
+              actions: [
+                {
+                  type: 'Action.OpenUrl',
+                  title: htmlUrl && (htmlUrl as string).startsWith('https://') ? '🔎 View S3 Report' : '📁 Open Local Report',
+                  url: htmlUrl || '#'
+                }
+              ]
+            }
+          }
+        ]
+      };
+      try {
+        const response = await fetch(TEAMS_WEBHOOK_URL as string, {
+          method: 'POST',
+          body: JSON.stringify(message),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        console.log('Teams response status:', response.status);
+        let responseText = '';
+        try { responseText = await response.text(); } catch {}
+        console.log('Teams response body:', responseText);
+        if (response.ok) console.log('Teams notification sent successfully.');
+        else console.log('Teams notification failed to send.');
+      } catch (err) {
+        console.error('ERROR posting to Teams:', err);
+      }
+    } else {
+      console.error('ERROR: TEAMS_WEBHOOK_URL not set');
+    }
+  
+    console.log('=== Teams Notification Script Completed ===');
+    process.exit(0);
+  }
 
   // 2. Upload HTML report to S3
   console.log('Uploading HTML report to S3...');

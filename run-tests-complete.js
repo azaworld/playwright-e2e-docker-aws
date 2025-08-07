@@ -1,11 +1,17 @@
 #!/usr/bin/env node
 
 const { spawn } = require('child_process');
+const fs = require('fs');
 
 console.log('🚀 Starting complete test pipeline...');
 
-// Run Playwright tests
-const playwright = spawn('npx', ['playwright', 'test', '--reporter=list,json,html'], {
+// Ensure test-results directory exists for JSON reporter output
+try {
+  fs.mkdirSync('test-results', { recursive: true });
+} catch {}
+
+// Run Playwright tests with JSON output saved to file
+const playwright = spawn('npx', ['playwright', 'test', '--reporter=list,json=test-results/playwright-report.json,html'], {
   stdio: 'pipe',
   shell: true
 });
