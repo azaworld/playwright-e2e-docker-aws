@@ -235,7 +235,7 @@ npm run test:notify      # Tests + Teams notification
 
 **Full Reporting Suite:**
 ```bash
-npm run test:all         # Tests + Allure + S3 + JSON reporter
+npm run test:all         # Tests + S3 + JSON reporter
 ```
 
 ### View Reports Locally
@@ -243,8 +243,8 @@ npm run test:all         # Tests + Allure + S3 + JSON reporter
 # Open HTML report
 npm run report
 
-# Open Allure report
-npm run allure:open
+# Open HTML report
+npm run report
 ```
 > **Note:** Do not run `npx playwright show-report` as part of your automated test scripts. Let the script finish completely to ensure Teams notifications and S3 uploads work. Run `npx playwright show-report` separately if you want to view the report locally.
 
@@ -353,7 +353,7 @@ docker run --env-file .env fur4-tests
 5. **View reports locally:**
    ```bash
    npm run report          # HTML report
-   npm run allure:open     # Allure report
+   npm run report          # HTML report
    ```
 
 6. **Debug test issues:**

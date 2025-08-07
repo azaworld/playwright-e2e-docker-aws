@@ -262,7 +262,7 @@ function generateTeamsMessage({
   skipped = 0,
   duration = 'N/A',
   htmlUrl = '#',
-  allureUrl = '#',
+  // allureUrl = '#',
   date,
   time
 }: {
@@ -273,7 +273,7 @@ function generateTeamsMessage({
   skipped: number;
   duration: string;
   htmlUrl: string;
-  allureUrl: string;
+  // allureUrl: string;
   date?: string;
   time?: string;
 }): string {
@@ -287,7 +287,7 @@ function generateTeamsMessage({
   const durationLine = `⏱️ **Duration:** ${duration}\n📊 **Pass %:** ${passPercent}%`;
   const envLine = `🌐 **Env:** ${env}\n📅 **Date:** ${dateStr}, ${timeStr}`;
   const htmlLine = htmlUrl && htmlUrl !== '#' ? '🔎 [**View HTML Report**](' + htmlUrl + ')' : '🔎 **HTML Report unavailable**';
-  const allureLine = allureUrl && allureUrl !== '#' ? '📊 [**View Allure Report**](' + allureUrl + ')' : '';
+  // const allureLine = allureUrl && allureUrl !== '#' ? '📊 [**View Allure Report**](' + allureUrl + ')' : '';
   return [
     statusLine,
     '',
@@ -296,7 +296,7 @@ function generateTeamsMessage({
     envLine,
     '',
     htmlLine,
-    allureLine
+    // allureLine
   ].filter(Boolean).join('\n\n');
 }
 
@@ -325,12 +325,12 @@ async function globalTeardown(config: FullConfig) {
   }
 
   // Wait for Allure report upload (assume index.html is the marker)
-  const allureReportPath = path.join(process.cwd(), 'allure-report', 'index.html');
-  await waitForFileWithValidJson(allureReportPath, 10, 500);
+  // const allureReportPath = path.join(process.cwd(), 'allure-report', 'index.html');
+  // await waitForFileWithValidJson(allureReportPath, 10, 500);
 
   // S3 URLs
   const htmlUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_REPORT_PREFIX}/index.html`;
-  const allureUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_ALLURE_PREFIX}/index.html`;
+  // const allureUrl = `https://${process.env.AWS_S3_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${process.env.AWS_S3_ALLURE_PREFIX}/index.html`;
   const env = process.env.TEST_ENV || 'Production';
 
   // Parse test results for metrics
@@ -376,12 +376,17 @@ async function globalTeardown(config: FullConfig) {
     skipped,
     duration,
     htmlUrl,
-    allureUrl,
+    // allureUrl,
     date,
     time
   });
 
-  // Post to Teams
+  // Teams notification is now handled by notifyTeams.ts script
+  // This prevents duplicate notifications when using test:complete or test:ci scripts
+  console.log('📢 Teams notification will be handled by the notifyTeams.ts script');
+  
+  // Uncomment below if you want global teardown to also send Teams notifications
+  /*
   const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
   if (webhookUrl) {
     const fetchFn: any = typeof fetch === 'function'
@@ -413,6 +418,7 @@ async function globalTeardown(config: FullConfig) {
   } else {
     console.error('ERROR: TEAMS_WEBHOOK_URL not set');
   }
+  */
 
   // Print summary
   console.log('📊 Test Summary:');

@@ -19,4 +19,4 @@ tests/fixtures/*.json # Ignore JSON fixtures, use TypeScript fixtures instead
 **/*.png
 **/*.mp4
 
-allure-results/
+# allure-results/

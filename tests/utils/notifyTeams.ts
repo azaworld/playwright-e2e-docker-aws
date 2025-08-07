@@ -21,7 +21,7 @@ const {
   AWS_S3_BUCKET,
   TEAMS_WEBHOOK_URL,
   ENV = 'Production',
-  ALLURE_REPORT_URL // Optional: e.g. https://my-bucket.s3.amazonaws.com/allure-report/index.html
+  // ALLURE_REPORT_URL // Optional: e.g. https://my-bucket.s3.amazonaws.com/allure-report/index.html
 } = process.env;
 
 AWS.config.update({
@@ -35,9 +35,7 @@ function parseResults(resultsPath: string) {
   if (!fs.existsSync(resultsPath)) {
     console.log(`Results file not found: ${resultsPath}`);
     
-    // Try to parse from Allure results instead
-    console.log('Attempting to parse from Allure results...');
-    return parseResultsFromAllure();
+    // Allure support removed - using HTML reports only
   }
   
   try {
@@ -136,68 +134,14 @@ function parseResults(resultsPath: string) {
     }
     
     console.log('No test data found in JSON, trying fallback methods...');
-    return parseResultsFromAllure();
+    // Allure support removed - using HTML reports only
   } catch (error) {
     console.log(`Error parsing JSON results: ${error}`);
-    return parseResultsFromAllure();
+    // Allure support removed - using HTML reports only
   }
 }
 
-function parseResultsFromAllure() {
-  const allureResultsDir = path.join(process.cwd(), 'allure-results');
-  if (!fs.existsSync(allureResultsDir)) {
-    console.log('Allure results directory not found');
-    return null;
-  }
-  
-  try {
-    const files = fs.readdirSync(allureResultsDir).filter(f => f.endsWith('-result.json'));
-    console.log(`Found ${files.length} Allure result files`);
-    
-    let total = 0;
-    let passed = 0;
-    let failed = 0;
-    let skipped = 0;
-    let totalDuration = 0;
-    const failedDetails: string[] = [];
-    
-    for (const file of files) {
-      const filePath = path.join(allureResultsDir, file);
-      const data = JSON.parse(fs.readFileSync(filePath, 'utf-8'));
-      
-      total++;
-      const duration = data.stop - data.start;
-      totalDuration += duration;
-      
-      switch (data.status) {
-        case 'passed':
-          passed++;
-          break;
-        case 'failed':
-          failed++;
-          const testName = data.name || 'Unknown test';
-          const fileName = data.fullName ? data.fullName.split(':')[0] : 'Unknown file';
-          const error = data.statusDetails?.message || 'Unknown error';
-          const cleanError = error.replace(/\u001b\[[0-9;]*m/g, '').replace(/Error: /, '').substring(0, 200);
-          failedDetails.push(`**${testName}**\nFile: ${fileName} Status: failed Error: ${cleanError}${cleanError.length >= 200 ? '...' : ''}`);
-          break;
-        case 'skipped':
-          skipped++;
-          break;
-      }
-    }
-    
-    const durationSec = totalDuration / 1000;
-    const passPercent = total > 0 ? ((passed / total) * 100).toFixed(1) : 'N/A';
-    
-    console.log(`Parsed from Allure: Total=${total}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}`);
-    
-    return { total, passed, failed, skipped, durationSec, passPercent, failedDetails };
-  } catch (error) {
-    console.log(`Error parsing Allure results: ${error}`);
-    return null;
-  }
-}
+// Allure support removed - using HTML reports only
 
 function parseResultsFromHtml() {
   try {
@@ -254,6 +198,7 @@ function parseResultsFromJson() {
     // The JSON report should contain test results with stats
     if (data.stats) {
       const stats = data.stats;
+      // Calculate total correctly: expected (passed) + skipped + unexpected (failed)
       const total = stats.expected + stats.skipped + stats.unexpected;
       const passed = stats.expected;
       const failed = stats.unexpected;
@@ -263,6 +208,32 @@ function parseResultsFromJson() {
       
       console.log(`Parsed from JSON: Total=${total}, Passed=${passed}, Failed=${failed}, Skipped=${skipped}`);
       
+      // Collect failed test details from suites
+      const failedDetails: string[] = [];
+      if (data.suites) {
+        function collectFailedTests(suites: any[]) {
+          for (const suite of suites) {
+            if (suite.specs) {
+              for (const spec of suite.specs) {
+                for (const test of spec.tests) {
+                  if (test.results?.[0]?.status === 'failed') {
+                    const error = test.results?.[0]?.error?.message || '';
+                    const fileName = spec.file ? spec.file.replace(/^tests\//, '') : 'Unknown file';
+                    const testName = test.title || 'Unknown test';
+                    const cleanError = error.replace(/\u001b\[[0-9;]*m/g, '').replace(/Error: /, '').substring(0, 200);
+                    failedDetails.push(`**${testName}**\nFile: ${fileName} Status: failed Error: ${cleanError}${cleanError.length >= 200 ? '...' : ''}`);
+                  }
+                }
+              }
+            }
+            if (suite.suites) {
+              collectFailedTests(suite.suites);
+            }
+          }
+        }
+        collectFailedTests(data.suites);
+      }
+      
       return {
         total,
         passed,
@@ -270,7 +241,7 @@ function parseResultsFromJson() {
         skipped,
         durationSec: `${durationMinutes}m`,
         passPercent,
-        failedDetails: []
+        failedDetails
       };
     }
     
@@ -408,22 +379,45 @@ async function uploadHtmlReport(): Promise<string | null> {
     path.join('test-results', 'index.html')
   ];
   const localPath = possibleHtmlPaths.find(p => fs.existsSync(p));
-  if (!localPath) return null;
-  const s3Key = 'playwright-report/index.html';
-  try {
-    const fileContent = fs.readFileSync(localPath);
-    const params = {
-      Bucket: AWS_S3_BUCKET!,
-      Key: s3Key,
-      Body: fileContent,
-      ContentType: 'text/html'
-    };
-    await s3.putObject(params as any).promise();
-    return `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${s3Key}`;
-  } catch (err) {
-    console.error('S3 upload failed:', err);
+  if (!localPath) {
+    console.log('HTML report not found in expected locations');
     return null;
   }
+  
+  console.log(`Uploading HTML report from: ${localPath}`);
+  
+  // Create unique timestamp for this report
+  const timestamp = dayjs().format('YYYY-MM-DD-HH-mm-ss');
+  const s3Key = `playwright-report/${timestamp}/index.html`;
+  
+  // Always try to upload to S3 if credentials are available
+  if (AWS_S3_BUCKET && AWS_ACCESS_KEY_ID && AWS_SECRET_ACCESS_KEY && AWS_REGION) {
+    console.log('AWS credentials available, attempting S3 upload...');
+    try {
+      const fileContent = fs.readFileSync(localPath);
+      const params = {
+        Bucket: AWS_S3_BUCKET,
+        Key: s3Key,
+        Body: fileContent,
+        ContentType: 'text/html',
+        CacheControl: 'no-cache, no-store, must-revalidate'
+      };
+      await s3.putObject(params as any).promise();
+      const url = `https://${AWS_S3_BUCKET}.s3.${AWS_REGION}.amazonaws.com/${s3Key}`;
+      console.log(`✅ HTML report uploaded successfully to S3: ${url}`);
+      return url;
+    } catch (err) {
+      console.error('❌ S3 upload failed:', err instanceof Error ? err.message : String(err));
+      console.log('⚠️ Falling back to local file path');
+    }
+  } else {
+    console.log('⚠️ AWS credentials not available for S3 upload');
+  }
+  
+  // Fallback to local file path
+  const absolutePath = path.resolve(localPath);
+  console.log(`📁 Using local HTML report path: ${absolutePath}`);
+  return `file://${absolutePath}`;
 }
 
 function formatDuration(seconds: number | string): string {
@@ -462,6 +456,9 @@ function buildTeamsMessage({
     : '❗ Issues detected in this run. Please review the failures below.';
   const duration = formatDuration(durationSec);
   const report_url = htmlUrl || 'HTML Report unavailable';
+  const report_text = htmlUrl && htmlUrl.startsWith('file://') 
+    ? `Local HTML Report: ${htmlUrl.replace('file://', '')}`
+    : report_url;
   const environment = env;
   const date_time = dateStr;
   const passed_count = passed;
@@ -474,10 +471,17 @@ function buildTeamsMessage({
     failedBlock = '\n❌ **Failed Tests**\nShowing ' + failedDetails.length + ' failure(s) below\n' + failedDetails.join('\n\n');
   }
 
+  // Handle different types of report URLs
+  const reportLink = htmlUrl && htmlUrl.startsWith('file://') 
+    ? `📁 Local HTML Report: ${htmlUrl.replace('file://', '')}`
+    : htmlUrl && htmlUrl.startsWith('https://') 
+    ? `🔎 [View S3 HTML Report](${htmlUrl})`
+    : `🔎 [View Detailed HTML Report](${report_url})`;
+
   return [
     `**${status_emoji} ${portalName} - ${status_message}**`,
     `Test Date: ${date_time}`,
-    `🔎 [View Detailed HTML Report](${report_url})`,
+    reportLink,
     '',
     footer_message,
     '',
@@ -491,7 +495,11 @@ function buildTeamsMessage({
     `📊 Pass %: ${pass_percent}%`,
     failedBlock,
     '',
-    '🔴 [View Latest Test Report](' + report_url + ')'
+    htmlUrl && htmlUrl.startsWith('file://') 
+      ? `📁 [Open Local Report](${htmlUrl})`
+      : htmlUrl && htmlUrl.startsWith('https://')
+      ? `🔎 [View S3 Report](${htmlUrl})`
+      : '🔴 [View Latest Test Report](' + report_url + ')'
   ].filter(Boolean).join('\n');
 }
 
@@ -554,14 +562,15 @@ function buildTeamsMessage({
 
   console.log('Final metrics:', metrics);
 
-  // 2. Upload HTML report
+  // 2. Upload HTML report to S3
+  console.log('Uploading HTML report to S3...');
   const htmlUrl = await uploadHtmlReport();
   console.log('HTML report URL:', htmlUrl);
 
   // 3. Date in Asia/Dhaka
   const dateStr = dayjs().tz('Asia/Dhaka').format('YYYY-MM-DD, hh:mm A');
 
-  // 4. Build message
+  // 4. Build Teams message
   const teamsMsg = buildTeamsMessage({
     ...metrics,
     env: ENV,
@@ -646,7 +655,9 @@ function buildTeamsMessage({
             'actions': [
               {
                 'type': 'Action.OpenUrl',
-                'title': '🔎 View Detailed HTML Report',
+                'title': htmlUrl && htmlUrl.startsWith('file://') ? '📁 Open Local Report' : 
+                        htmlUrl && htmlUrl.startsWith('https://') ? '🔎 View S3 Report' : 
+                        '🔎 View Detailed HTML Report',
                 'url': htmlUrl || '#'
               }
             ]

@@ -113,7 +113,7 @@ File: fur4-main/pre-login/menu/menu.spec.ts Status: failed Error: locator.fill: 
 After running, you'll have:
 - `test-results/` - Test artifacts and results
 - `playwright-report/` - HTML report
-- `allure-results/` - Allure test results
+- `test-results/` - Playwright test results
 - S3 bucket with uploaded reports
 
 ## 🎉 Success Indicators
