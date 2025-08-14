@@ -5,7 +5,8 @@
   "scripts": {
     "test": "playwright test",
     "test:fur4": "playwright test tests/fur4-main/fur4-main-site.spec.ts",
-    "test:refer": "playwright test tests/fur4-referral/fur4-referral-site.spec.ts",
+    "test:refer": "playwright test tests/fur4-referral",
+    "test:refer:fast": "playwright test tests/fur4-referral/pre-login --workers=2 --fully-parallel",
     "test:all": "npx playwright test && npx ts-node tests/utils/upload-playwright-report-to-s3.ts && npx ts-node tests/utils/always-json-reporter.ts",
     "test:critical": "playwright test tests/fur4-main/critical-flows.spec.ts",
     "test:headed": "playwright test --headed",

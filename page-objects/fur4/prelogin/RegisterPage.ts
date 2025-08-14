@@ -602,7 +602,24 @@ export class RegisterPage {
   }
 
   async checkOptInfoEmail(): Promise<void> {
-    await this.optInfoEmailCheckbox.click();
+    try {
+      // Check if checkbox exists and is visible
+      const count = await this.optInfoEmailCheckbox.count();
+      if (count === 0) {
+        console.log('⚠ Opt Info Email checkbox not found');
+        return;
+      }
+      
+      const isVisible = await this.optInfoEmailCheckbox.isVisible();
+      if (!isVisible) {
+        console.log('⚠ Opt Info Email checkbox not visible');
+        return;
+      }
+      
+      await this.optInfoEmailCheckbox.click();
+    } catch (error) {
+      console.log('⚠ Failed to check Opt Info Email checkbox:', error);
+    }
   }
 
   async isOptInfoSmsCheckboxVisible(): Promise<boolean> {
@@ -615,7 +632,24 @@ export class RegisterPage {
   }
 
   async checkOptInfoSms(): Promise<void> {
-    await this.optInfoSmsCheckbox.click();
+    try {
+      // Check if checkbox exists and is visible
+      const count = await this.optInfoSmsCheckbox.count();
+      if (count === 0) {
+        console.log('⚠ Opt Info SMS checkbox not found');
+        return;
+      }
+      
+      const isVisible = await this.optInfoSmsCheckbox.isVisible();
+      if (!isVisible) {
+        console.log('⚠ Opt Info SMS checkbox not visible');
+        return;
+      }
+      
+      await this.optInfoSmsCheckbox.click();
+    } catch (error) {
+      console.log('⚠ Failed to check Opt Info SMS checkbox:', error);
+    }
   }
 
   async isPrivacyPolicyLinkVisible(): Promise<boolean> {

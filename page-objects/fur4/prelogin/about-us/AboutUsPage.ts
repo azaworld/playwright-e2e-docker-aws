@@ -52,7 +52,7 @@ export class AboutUsPage {
       await this.page.waitForSelector('body', { state: 'visible', timeout: 15000 });
       
       // Wait for the page to be loaded by checking for the About FUR4 heading
-      await this.page.waitForSelector('div', { hasText: 'About FUR4' }, { timeout: 15000 });
+      await this.mainTitle.waitFor({ state: 'visible', timeout: 15000 });
       
       // Remove networkidle wait as it's causing timeout issues
       // await this.page.waitForLoadState('networkidle', { timeout: 10000 });

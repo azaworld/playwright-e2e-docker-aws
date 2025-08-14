@@ -10,8 +10,8 @@ try {
   fs.mkdirSync('test-results', { recursive: true });
 } catch {}
 
-// Run Playwright tests with JSON output saved to file
-const playwright = spawn('npx', ['playwright', 'test', '--reporter=list,json=test-results/playwright-report.json,html'], {
+// Run Playwright tests with HTML + list reporters
+const playwright = spawn('npx', ['playwright', 'test', '--reporter=list,html'], {
   stdio: 'pipe',
   shell: true
 });
