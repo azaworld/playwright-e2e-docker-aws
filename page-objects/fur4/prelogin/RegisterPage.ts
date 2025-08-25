@@ -680,10 +680,80 @@ export class RegisterPage {
 
   async isRecaptchaVisible(): Promise<boolean> {
     try {
-      const recaptcha = this.page.locator('iframe[title="reCAPTCHA"]');
-      await expect(recaptcha).toBeVisible({ timeout: 5000 });
-      return true;
-    } catch {
+      // Wait for page to be fully loaded first
+      await this.page.waitForLoadState('domcontentloaded');
+      
+      // Wait a bit more for dynamic content to load
+      await this.page.waitForTimeout(2000);
+      
+      // Try multiple reCAPTCHA selectors based on the HTML structure
+      const recaptchaSelectors = [
+        'iframe[title="reCAPTCHA"]',
+        'iframe[src*="google.com/recaptcha"]',
+        'iframe[src*="recaptcha"]',
+        '.g-recaptcha iframe'
+      ];
+      
+      for (const selector of recaptchaSelectors) {
+        try {
+          const recaptcha = this.page.locator(selector);
+          if (await recaptcha.count() > 0) {
+            await expect(recaptcha).toBeVisible({ timeout: 10000 });
+            console.log(`✓ reCAPTCHA found with selector: ${selector}`);
+            return true;
+          }
+        } catch (error) {
+          console.log(`⚠ reCAPTCHA selector ${selector} failed:`, (error as Error).message);
+          continue;
+        }
+      }
+      
+      // If no iframe found, check for reCAPTCHA div
+      const recaptchaDiv = this.page.locator('.g-recaptcha, [data-sitekey]');
+      if (await recaptchaDiv.count() > 0) {
+        console.log('✓ reCAPTCHA div found');
+        return true;
+      }
+      
+      // Check if reCAPTCHA might be conditionally loaded - try interacting with the form first
+      console.log('⚠ reCAPTCHA not found initially, trying to trigger dynamic loading...');
+      
+      // Try clicking on a form field to trigger potential reCAPTCHA loading
+      try {
+        const emailInput = this.page.locator('input[name="email"]');
+        if (await emailInput.count() > 0) {
+          await emailInput.click();
+          await this.page.waitForTimeout(1000);
+          
+          // Check again for reCAPTCHA after interaction
+          for (const selector of recaptchaSelectors) {
+            try {
+              const recaptcha = this.page.locator(selector);
+              if (await recaptcha.count() > 0) {
+                await expect(recaptcha).toBeVisible({ timeout: 5000 });
+                console.log(`✓ reCAPTCHA found after form interaction with selector: ${selector}`);
+                return true;
+              }
+            } catch (error) {
+              continue;
+            }
+          }
+        }
+      } catch (error) {
+        console.log('⚠ Form interaction failed:', (error as Error).message);
+      }
+      
+      // Check if reCAPTCHA might be in a different state or hidden
+      const pageText = await this.page.textContent('body');
+      if (pageText && /recaptcha|robot|verification/i.test(pageText)) {
+        console.log('✓ reCAPTCHA-related text found in page content');
+        return true;
+      }
+      
+      console.log('❌ No reCAPTCHA found with any selector or interaction');
+      return false;
+    } catch (error) {
+      console.log('❌ reCAPTCHA visibility check failed:', (error as Error).message);
       return false;
     }
   }

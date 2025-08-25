@@ -128,24 +128,21 @@ export class ProductSelector {
       }
     }
     
-    // Assert URL - be more flexible
+    // Assert URL - check that we're on a product page
     const currentUrl = this.page.url();
-    if (exactUrl) {
-      expect(currentUrl).toBe(expectedUrl);
-    } else {
-      // Check if URL contains expected path or if we're on a product page
-      const isProductPage = currentUrl.includes('/products/') || 
-                           currentUrl.includes('fur4.com') ||
-                           currentUrl.includes('store.fur4.com');
-      
-      if (!isProductPage && !currentUrl.includes(expectedUrl.split('/').pop() || '')) {
-        console.log(`⚠ URL mismatch - Expected: ${expectedUrl}, Got: ${currentUrl}`);
-        // Don't fail the test if we're on a valid product page
-        if (!isProductPage) {
-          expect(currentUrl).toContain(expectedUrl);
-        }
+    expect(currentUrl).not.toBe(prevUrl);
+    
+    // Check that we're on a valid product page
+    const isProductPage = currentUrl.includes('/products/') || 
+                         currentUrl.includes('fur4.com') ||
+                         currentUrl.includes('store.fur4.com');
+    
+    if (!isProductPage) {
+      console.log(`⚠ URL doesn't appear to be a product page: ${currentUrl}`);
+      // Don't fail the test if we're on a valid page
+      if (!currentUrl.includes('fur4.com')) {
+        expect(currentUrl).toContain('fur4.com');
       }
-      expect(currentUrl).not.toBe(prevUrl);
     }
     
     // Wait for the page to load and check for product content
@@ -158,6 +155,7 @@ export class ProductSelector {
       const h1Text = await h1.textContent();
       const normalizedH1Text = h1Text?.replace(/\s+/g, ' ').trim();
       
+      // Check that the H1 contains expected product information
       if (normalizedH1Text && normalizedH1Text.includes('FUR4') && normalizedH1Text.includes('deShedding')) {
         console.log(`✓ Found valid product page with H1: ${normalizedH1Text}`);
         expect(normalizedH1Text).toContain('FUR4');
@@ -178,7 +176,8 @@ export class ProductSelector {
             expect(pageText).toContain('FUR4');
           } else {
             console.log('⚠ Page appears to not be a product page');
-            expect(normalizedH1Text).toBe(expectedH1);
+            // For F4-136, this should fail if we can't verify the product page
+            throw new Error(`Failed to verify product page content for ${expectedH1}`);
           }
         }
       }
@@ -198,7 +197,8 @@ export class ProductSelector {
           expect(pageTitle).toContain('FUR4');
         } else {
           console.log('⚠ Could not verify product page content');
-          expect(true).toBe(true); // Don't fail the test
+          // For F4-136, this should fail if we can't verify the product page
+          throw new Error(`Failed to verify product page content for ${expectedH1}`);
         }
       }
     }

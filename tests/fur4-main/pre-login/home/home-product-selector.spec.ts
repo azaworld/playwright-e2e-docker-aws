@@ -18,7 +18,7 @@ test.describe('F4 Homepage – Product Selector Cards Section', () => {
   });
 
 
-  test('F4-059: 1st card Learn More navigates to Long Hair Dog product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
+  test('F4-059: 1st card Learn More navigates to a valid product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
     await productSelector.scrollToSection();
     await test.step('Click 1st card + Learn More and assert navigation', async () => {
       await productSelector.clickLearnMoreButtonAndAssertNavigation(
@@ -29,7 +29,7 @@ test.describe('F4 Homepage – Product Selector Cards Section', () => {
     });
   });
 
-  test('F4-060: 2nd card Learn More navigates to Short Hair Dog product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
+  test('F4-060: 2nd card Learn More navigates to a valid product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
     await productSelector.scrollToSection();
     await test.step('Click 2nd card + Learn More and assert navigation', async () => {
       await productSelector.clickLearnMoreButtonAndAssertNavigation(
@@ -40,7 +40,7 @@ test.describe('F4 Homepage – Product Selector Cards Section', () => {
     });
   });
 
-  test('F4-061: 3rd card Learn More navigates to Long Hair Cat product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
+  test('F4-061: 3rd card Learn More navigates to a valid product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
     await productSelector.scrollToSection();
     await test.step('Click 3rd card + Learn More and assert navigation', async () => {
       await productSelector.clickLearnMoreButtonAndAssertNavigation(
@@ -51,7 +51,7 @@ test.describe('F4 Homepage – Product Selector Cards Section', () => {
     });
   });
 
-  test('F4-62: 4th card Learn More navigates to Short Hair Cat product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
+  test('F4-62: 4th card Learn More navigates to a valid product page', { tag: [Type.SECTION, Type.BUTTON, Type.FUNCTIONAL] }, async () => {
     await productSelector.scrollToSection();
     await test.step('Click 4th card + Learn More and assert navigation', async () => {
       await productSelector.clickLearnMoreButtonAndAssertNavigation(

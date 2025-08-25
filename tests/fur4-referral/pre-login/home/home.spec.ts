@@ -40,8 +40,11 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
   });
 
   test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '003' })} Get Your Unique Referral Link button is visible`, async ({ page }) => {
-    await test.step('Verify Get Your Unique Referral Link button', async () => {
-      await expect(page.getByRole('button', { name: 'Get Your Unique Referral Link' })).toBeVisible();
+    await test.step('Verify Sign Up Now & Get Your Link button is visible', async () => {
+      // The actual button on the page says "Sign Up Now & Get Your Link"
+      const button = page.getByRole('button', { name: 'Sign Up Now & Get Your Link' });
+      await expect(button).toBeVisible();
+      console.log('✓ Found the correct referral button: "Sign Up Now & Get Your Link"');
     });
   });
 

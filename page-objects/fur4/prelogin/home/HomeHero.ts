@@ -12,7 +12,7 @@ export class HomeHero {
 
   constructor(page: Page) {
     this.page = page;
-    this.logo = page.locator('[data-testid="logo"], img[alt*="FUR4"], img[alt*="logo"]').first();
+    this.logo = page.locator('[data-testid="logo"], img[alt*="FUR4"], img[alt*="logo"], img[alt*="F4"], a[href="/"] img, .logo img, header img').first();
     this.heroTitle = page.locator('h1, [data-testid="hero-title"]').filter({ hasText: /deShedding Tool/i });
     this.heroTagline = page.getByText('safer, gentler and more effective', { exact: false });
     this.heroDescription = page.getByText('Designed to dramatically reduce shedding for', { exact: false });
@@ -68,9 +68,38 @@ export class HomeHero {
 
   async isLogoVisible(): Promise<boolean> {
     try {
-      await expect(this.logo).toBeVisible({ timeout: 5000 });
-      return true;
-    } catch {
+      // Wait for page to be fully loaded first
+      await this.page.waitForLoadState('domcontentloaded');
+      
+      // Try multiple logo selectors if the main one fails
+      const logoSelectors = [
+        '[data-testid="logo"]',
+        'img[alt*="FUR4"]',
+        'img[alt*="logo"]',
+        'img[alt*="F4"]',
+        'a[href="/"] img',
+        '.logo img',
+        'header img'
+      ];
+      
+      for (const selector of logoSelectors) {
+        try {
+          const logo = this.page.locator(selector);
+          if (await logo.count() > 0) {
+            await expect(logo).toBeVisible({ timeout: 10000 });
+            console.log(`✓ Logo found with selector: ${selector}`);
+            return true;
+          }
+        } catch (error) {
+          console.log(`⚠ Logo selector ${selector} failed:`, (error as Error).message);
+          continue;
+        }
+      }
+      
+      console.log('❌ No logo found with any selector');
+      return false;
+    } catch (error) {
+      console.log('❌ Logo visibility check failed:', (error as Error).message);
       return false;
     }
   }

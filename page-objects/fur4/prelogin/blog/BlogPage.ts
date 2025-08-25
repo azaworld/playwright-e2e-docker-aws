@@ -96,7 +96,7 @@ export class BlogPage {
         
         // Wait for the blog content to be loaded
         console.log('Waiting for blog content...');
-        await this.page.waitForSelector('h1, h2, h3', { hasText: /Blog|Featured|Recent/i }, { timeout: 15000 });
+        await this.page.waitForSelector('h1, h2, h3', { timeout: 15000 });
         console.log('Blog content found');
         console.log('Final URL:', await this.page.url());
         
@@ -107,8 +107,9 @@ export class BlogPage {
         }
         
         console.log('=== END BLOG NAVIGATION DEBUG ===');
-      } catch (menuError) {
-        console.log('Menu navigation failed:', menuError.message);
+      } catch (menuError: unknown) {
+        const errorMessage = menuError instanceof Error ? menuError.message : String(menuError);
+        console.log('Menu navigation failed:', errorMessage);
         console.log('Falling back to direct navigation...');
         
         // Direct navigation fallback
@@ -117,14 +118,22 @@ export class BlogPage {
         console.log('Direct navigation to blog page successful');
         
         // Wait for blog content to load
-        await this.page.waitForSelector('h1, h2, h3', { hasText: /Blog|Featured|Recent/i }, { timeout: 15000 });
+        await this.page.waitForSelector('h1, h2, h3', { timeout: 15000 });
         console.log('Blog content loaded after direct navigation');
         console.log('Final URL after direct navigation:', await this.page.url());
       }
     } catch (error) {
       console.error('Navigation to blog page failed:', error);
-      console.log('Current URL at error:', await this.page.url());
-      console.log('Page title at error:', await this.page.title());
+      try {
+        console.log('Current URL at error:', await this.page.url());
+      } catch (urlError) {
+        console.log('Could not get URL at error:', urlError);
+      }
+      try {
+        console.log('Page title at error:', await this.page.title());
+      } catch (titleError) {
+        console.log('Could not get page title at error:', titleError);
+      }
       throw error;
     }
   }
@@ -154,11 +163,53 @@ export class BlogPage {
   }
 
   async getFeaturedCardsCount(): Promise<number> {
-    // Updated to use more specific selectors based on debug output
-    const featuredCards = await this.page.locator('article').filter({ 
-      hasText: /How to Eliminate Hairballs|Shedding 101|Breed Breakdown/i 
-    }).count();
-    return featuredCards;
+    return await this.featuredCards.count();
+  }
+
+  async checkFeaturedCardContent(cardIndex: number): Promise<{ hasImage: boolean; hasTitle: boolean; hasDate: boolean; title: string; date: string }> {
+    const card = this.featuredCards.nth(cardIndex);
+    
+    // Check for image
+    const image = card.locator('img').first();
+    const hasImage = await image.count() > 0;
+    
+    // Check for title (h2 element or any heading)
+    const title = card.locator('h1, h2, h3, h4, h5, h6').first();
+    const hasTitle = await title.count() > 0;
+    const titleText = hasTitle ? await title.textContent() : '';
+    
+    // Check for date (span with date-like text or any element with date)
+    const dateSpan = card.locator('span, time, .date, .published').filter({ hasText: /[A-Za-z]+ \d{1,2}, \d{4}/ });
+    const hasDate = await dateSpan.count() > 0;
+    const dateText = hasDate ? await dateSpan.textContent() : '';
+    
+    return {
+      hasImage,
+      hasTitle,
+      hasDate,
+      title: titleText?.trim() || '',
+      date: dateText?.trim() || ''
+    };
+  }
+
+  async verifyAllFeaturedCardsHaveContent(): Promise<boolean> {
+    const cardCount = await this.getFeaturedCardsCount();
+    console.log(`Found ${cardCount} featured blog cards`);
+    
+    for (let i = 0; i < cardCount; i++) {
+      const cardContent = await this.checkFeaturedCardContent(i);
+      console.log(`Card ${i + 1}: Image=${cardContent.hasImage}, Title=${cardContent.hasTitle}, Date=${cardContent.hasDate}`);
+      console.log(`  Title: "${cardContent.title}"`);
+      console.log(`  Date: "${cardContent.date}"`);
+      
+      // Each card should have at least a title and date
+      if (!cardContent.hasTitle || !cardContent.hasDate) {
+        console.log(`❌ Card ${i + 1} missing required content`);
+        return false;
+      }
+    }
+    
+    return true;
   }
 
   async getRecentCardsCount(): Promise<number> {

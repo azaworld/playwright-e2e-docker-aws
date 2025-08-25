@@ -38,69 +38,30 @@ test.describe('F4 Blog Page', () => {
 
   test('F4-182: Check each Featured blog card displays image, title, and date', { tag: [Type.UI, Type.CONTENT] }, async () => {
     await test.step('Get Featured cards count', async () => {
-      // Use a more robust approach to find featured cards
-      const featuredCards = blogPage.page.locator('article').filter({ hasText: /How to Eliminate Hairballs|Shedding 101|Breed Breakdown/i });
-      const featuredCount = await featuredCards.count();
-      
-      // If no cards found with specific text, try a broader approach
-      if (featuredCount === 0) {
-        console.log('⚠️ No featured cards found with specific text, trying broader approach...');
-        const allCards = blogPage.page.locator('article');
-        const allCardCount = await allCards.count();
-        console.log(`Found ${allCardCount} total article cards`);
-        
-        // Check if we can identify featured cards by their position or other attributes
-        if (allCardCount > 0) {
-          console.log('✓ Found article cards - proceeding with broader check');
-          // Use the first few cards as featured cards for testing
-          const actualFeaturedCount = Math.min(allCardCount, 3);
-          expect(actualFeaturedCount).toBeGreaterThan(0);
-          console.log(`✓ Using ${actualFeaturedCount} cards as featured cards`);
-          return;
-        }
-      }
-      
+      const featuredCount = await blogPage.getFeaturedCardsCount();
       expect(featuredCount).toBeGreaterThan(0);
       console.log(`✓ Found ${featuredCount} Featured blog cards`);
     });
+    
     await test.step('Verify each Featured card has image, title, and date', async () => {
-      const featuredCards = blogPage.page.locator('article').filter({ hasText: /How to Eliminate Hairballs|Shedding 101|Breed Breakdown/i });
-      const featuredCount = await featuredCards.count();
+      const allCardsHaveContent = await blogPage.verifyAllFeaturedCardsHaveContent();
+      expect(allCardsHaveContent).toBe(true);
+      console.log('✓ All featured blog cards have required content (title and date)');
       
-      // If no specific featured cards found, check all cards
-      const cardsToCheck = featuredCount > 0 ? featuredCards : blogPage.page.locator('article');
-      const actualCount = featuredCount > 0 ? featuredCount : await cardsToCheck.count();
+      // Additional check: verify at least one card has an image
+      const cardCount = await blogPage.getFeaturedCardsCount();
+      let hasImageCount = 0;
       
-      for (let i = 0; i < Math.min(actualCount, 3); i++) {
-        const card = cardsToCheck.nth(i);
-        
-        // Check if card has content
-        const cardText = await card.textContent();
-        expect(cardText).toBeTruthy();
-        expect(cardText!.length).toBeGreaterThan(10);
-        
-        // Check for image (optional - might not be present)
-        const image = card.locator('img').first();
-        const imageCount = await image.count();
-        if (imageCount > 0) {
-          await expect(image).toBeVisible({ timeout: 3000 });
-          console.log(`✓ Card ${i + 1} has image`);
-        } else {
-          console.log(`⚠️ Card ${i + 1} has no image - this might be expected`);
+      for (let i = 0; i < cardCount; i++) {
+        const cardContent = await blogPage.checkFeaturedCardContent(i);
+        if (cardContent.hasImage) {
+          hasImageCount++;
         }
-        
-        // Check for link
-        const link = card.locator('a').first();
-        const linkCount = await link.count();
-        if (linkCount > 0) {
-          await expect(link).toBeVisible({ timeout: 3000 });
-          console.log(`✓ Card ${i + 1} has link`);
-        } else {
-          console.log(`⚠️ Card ${i + 1} has no link - this might be expected`);
-        }
-        
-        console.log(`✓ Featured card ${i + 1} has title and date`);
       }
+      
+      console.log(`✓ ${hasImageCount} out of ${cardCount} cards have images`);
+      // At least one card should have an image
+      expect(hasImageCount).toBeGreaterThan(0);
     });
   });
 
