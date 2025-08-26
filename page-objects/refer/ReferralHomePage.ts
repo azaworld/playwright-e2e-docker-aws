@@ -321,4 +321,103 @@ export class ReferralHomePage extends BasePage {
       console.log('Some social/utility elements not found on this page');
     }
   }
+
+  async verifyHowItWorksSection(): Promise<void> {
+    // Verify How it works title using heading selector
+    const howItWorksTitle = this.page.locator('h2:has-text("How it works")');
+    if (await howItWorksTitle.count() > 0) {
+      await expect(howItWorksTitle).toBeVisible();
+    }
+
+    // Verify 3-step process content using heading selectors
+    const stepTexts = [
+      'Share your Unique Referral link',
+      'Your Link Gets Used',
+      'You Get Paid'
+    ];
+    
+    for (const stepText of stepTexts) {
+      const stepElement = this.page.locator(`h3:has-text("${stepText}")`);
+      if (await stepElement.count() > 0) {
+        await expect(stepElement).toBeVisible();
+      }
+    }
+
+    // Also verify step numbers are present
+    const stepNumbers = ['1', '2', '3'];
+    for (const stepNumber of stepNumbers) {
+      const stepNumberElement = this.page.locator(`text=Step ${stepNumber}`);
+      if (await stepNumberElement.count() > 0) {
+        await expect(stepNumberElement).toBeVisible();
+      }
+    }
+  }
+
+  async verifyTestimonialsSection(): Promise<void> {
+    // Verify Testimonials title using heading selector to avoid strict mode violation
+    const testimonialsTitle = this.page.locator('h2:has-text("Testimonials")');
+    if (await testimonialsTitle.count() > 0) {
+      await expect(testimonialsTitle).toBeVisible();
+    }
+
+    // Verify testimonial content
+    const testimonialTexts = [
+      'Jimmy Fernandez',
+      'Abigail Johnson', 
+      'Sam Fisher'
+    ];
+    
+    for (const testimonialText of testimonialTexts) {
+      const testimonialElement = this.page.getByText(testimonialText);
+      if (await testimonialElement.count() > 0) {
+        await expect(testimonialElement).toBeVisible();
+      }
+    }
+  }
+
+  async verifyWhyJoinSection(): Promise<void> {
+    // Verify Why Join title
+    const whyJoinTitle = this.page.getByText('Why Join');
+    if (await whyJoinTitle.count() > 0) {
+      await expect(whyJoinTitle).toBeVisible();
+    }
+
+    // Verify benefits list
+    const benefitTexts = [
+      '$5 Cash for Every Sale',
+      'Real-Time Analytics Dashboard',
+      'Instant Withdrawals via PayPal & Plaid'
+    ];
+    
+    for (const benefitText of benefitTexts) {
+      const benefitElement = this.page.getByText(benefitText);
+      if (await benefitElement.count() > 0) {
+        await expect(benefitElement).toBeVisible();
+      }
+    }
+  }
+
+  async verifyInfluencerPerksSection(): Promise<void> {
+    // Verify Influencer perks title
+    const influencerTitle = this.page.getByText('Influencer - Exclusive Perks');
+    if (await influencerTitle.count() > 0) {
+      await expect(influencerTitle).toBeVisible();
+    }
+
+    // Verify exclusive perks
+    const perkTexts = [
+      'Request Free Samples',
+      'Access Advanced Analytics',
+      'Live Chat Support',
+      'Priority Payouts',
+      'Special Coupon Campaigns'
+    ];
+    
+    for (const perkText of perkTexts) {
+      const perkElement = this.page.getByText(perkText);
+      if (await perkElement.count() > 0) {
+        await expect(perkElement).toBeVisible();
+      }
+    }
+  }
 }

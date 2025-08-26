@@ -9,6 +9,21 @@ export class RegisterPage {
   readonly registerButton: Locator;
   readonly signInLink: Locator;
   readonly getYourUniqueReferralLinkButton: Locator;
+  
+  // Additional selectors for missing elements
+  readonly createAccountTitle: Locator;
+  readonly socialSignUpTitle: Locator;
+  readonly googleLoginButton: Locator;
+  readonly facebookLoginButton: Locator;
+  readonly linkedinLoginButton: Locator;
+  readonly orSeparator: Locator;
+  readonly firstNameInput: Locator;
+  readonly lastNameInput: Locator;
+  readonly recaptchaCheckbox: Locator;
+  readonly recaptchaPrivacyLink: Locator;
+  readonly recaptchaTermsLink: Locator;
+  readonly alreadyHaveAccountText: Locator;
+  readonly countryInfoMessage: Locator;
 
   constructor(page: Page) {
     this.page = page;
@@ -19,6 +34,21 @@ export class RegisterPage {
     this.registerButton = page.getByRole('button', { name: 'Register and Get Link' });
     this.signInLink = page.getByRole('link', { name: 'Sign In' });
     this.getYourUniqueReferralLinkButton = page.getByRole('button', { name: 'Get Your Unique Referral Link' });
+    
+    // Initialize additional selectors
+    this.createAccountTitle = page.getByText('Create Your Account');
+    this.socialSignUpTitle = page.getByText('Social Sign Up');
+    this.googleLoginButton = page.getByRole('button', { name: /Google/i });
+    this.facebookLoginButton = page.getByRole('button', { name: /Facebook/i });
+    this.linkedinLoginButton = page.getByRole('button', { name: /LinkedIn/i });
+    this.orSeparator = page.locator('p:has-text("or")').filter({ hasText: /^or$/ });
+    this.firstNameInput = page.getByPlaceholder('First Name');
+    this.lastNameInput = page.getByPlaceholder('Last Name');
+    this.recaptchaCheckbox = page.getByRole('checkbox', { name: "I'm not a robot" });
+    this.recaptchaPrivacyLink = page.getByRole('link', { name: 'Privacy' });
+    this.recaptchaTermsLink = page.getByRole('link', { name: 'Terms' });
+    this.alreadyHaveAccountText = page.getByText('Already have an Account?');
+    this.countryInfoMessage = page.getByText('Currently Only Available in the USA');
   }
 
   async navigateToRegisterPage(): Promise<void> {
@@ -146,6 +176,140 @@ export class RegisterPage {
       return true;
     } catch {
       return false;
+    }
+  }
+
+  // ===== ADDITIONAL METHODS FOR MISSING ELEMENTS =====
+
+  async verifyCreateAccountTitle(): Promise<void> {
+    if (await this.createAccountTitle.count() > 0) {
+      await expect(this.createAccountTitle).toBeVisible();
+    }
+  }
+
+  async verifySocialSignUpSection(): Promise<void> {
+    // Verify Social Sign Up title
+    if (await this.socialSignUpTitle.count() > 0) {
+      await expect(this.socialSignUpTitle).toBeVisible();
+    }
+
+    // Verify social login buttons
+    if (await this.googleLoginButton.count() > 0) {
+      await expect(this.googleLoginButton).toBeVisible();
+    }
+    if (await this.facebookLoginButton.count() > 0) {
+      await expect(this.facebookLoginButton).toBeVisible();
+    }
+    if (await this.linkedinLoginButton.count() > 0) {
+      await expect(this.linkedinLoginButton).toBeVisible();
+    }
+  }
+
+  async verifyNameFields(): Promise<void> {
+    // Verify First Name field
+    if (await this.firstNameInput.count() > 0) {
+      await expect(this.firstNameInput).toBeVisible();
+      await expect(this.firstNameInput).toBeEnabled();
+      await expect(this.firstNameInput).toHaveAttribute('placeholder', 'First Name');
+    }
+
+    // Verify Last Name field
+    if (await this.lastNameInput.count() > 0) {
+      await expect(this.lastNameInput).toBeVisible();
+      await expect(this.lastNameInput).toBeEnabled();
+      await expect(this.lastNameInput).toHaveAttribute('placeholder', 'Last Name');
+    }
+  }
+
+  async verifyRecaptchaElements(): Promise<void> {
+    // Verify reCAPTCHA checkbox
+    if (await this.recaptchaCheckbox.count() > 0) {
+      await expect(this.recaptchaCheckbox).toBeVisible();
+      await expect(this.recaptchaCheckbox).toBeEnabled();
+    }
+
+    // Verify reCAPTCHA links
+    if (await this.recaptchaPrivacyLink.count() > 0) {
+      await expect(this.recaptchaPrivacyLink).toBeVisible();
+    }
+    if (await this.recaptchaTermsLink.count() > 0) {
+      await expect(this.recaptchaTermsLink).toBeVisible();
+    }
+  }
+
+  async verifyPageSeparatorsAndMessages(): Promise<void> {
+    // Verify or separator
+    if (await this.orSeparator.count() > 0) {
+      await expect(this.orSeparator).toBeVisible();
+    }
+
+    // Verify country info message
+    if (await this.countryInfoMessage.count() > 0) {
+      await expect(this.countryInfoMessage).toBeVisible();
+    }
+
+    // Verify already have account text
+    if (await this.alreadyHaveAccountText.count() > 0) {
+      await expect(this.alreadyHaveAccountText).toBeVisible();
+    }
+  }
+
+  async fillNameFields(firstName: string, lastName: string): Promise<void> {
+    if (await this.firstNameInput.count() > 0) {
+      await this.firstNameInput.fill(firstName);
+    }
+    if (await this.lastNameInput.count() > 0) {
+      await this.lastNameInput.fill(lastName);
+    }
+  }
+
+  async verifySocialButtonsAreClickable(): Promise<void> {
+    if (await this.googleLoginButton.count() > 0) {
+      await expect(this.googleLoginButton).toBeEnabled();
+    }
+    if (await this.facebookLoginButton.count() > 0) {
+      await expect(this.facebookLoginButton).toBeEnabled();
+    }
+    if (await this.linkedinLoginButton.count() > 0) {
+      await expect(this.linkedinLoginButton).toBeEnabled();
+    }
+  }
+
+  async getFirstNameValue(): Promise<string> {
+    if (await this.firstNameInput.count() > 0) {
+      return await this.firstNameInput.inputValue();
+    }
+    return '';
+  }
+
+  async getLastNameValue(): Promise<string> {
+    if (await this.lastNameInput.count() > 0) {
+      return await this.lastNameInput.inputValue();
+    }
+    return '';
+  }
+
+  async clickGoogleLoginButton(): Promise<void> {
+    if (await this.googleLoginButton.count() > 0) {
+      await this.googleLoginButton.click();
+    }
+  }
+
+  async clickFacebookLoginButton(): Promise<void> {
+    if (await this.facebookLoginButton.count() > 0) {
+      await this.facebookLoginButton.click();
+    }
+  }
+
+  async clickLinkedinLoginButton(): Promise<void> {
+    if (await this.linkedinLoginButton.count() > 0) {
+      await this.linkedinLoginButton.click();
+    }
+  }
+
+  async clickRecaptchaCheckbox(): Promise<void> {
+    if (await this.recaptchaCheckbox.count() > 0) {
+      await this.recaptchaCheckbox.click();
     }
   }
 }

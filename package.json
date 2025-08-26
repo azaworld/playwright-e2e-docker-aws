@@ -34,7 +34,8 @@
 
     "test:notify": "npx playwright test && npx ts-node tests/utils/notifyTeams.ts",
     "test:notify:all": "npx playwright test && npx ts-node tests/utils/notifyTeams.ts",
-    "open-report": "node open-report.js"
+    "open-report": "node open-report.js",
+    "ui": "npx playwright test --ui"
   },
   "keywords": [
     "playwright",
