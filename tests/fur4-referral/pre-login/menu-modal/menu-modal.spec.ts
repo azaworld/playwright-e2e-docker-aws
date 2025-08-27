@@ -20,7 +20,7 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
     if (sharedPage) {
       const currentUrl = await sharedPage.url();
       if (!currentUrl.includes('refer.fur4.com') || currentUrl.includes('/faq') || currentUrl.includes('/login') || currentUrl.includes('/register')) {
-        console.log(`🔄 Navigating back to home page from: ${currentUrl}`);
+        console.log(` Navigating back to home page from: ${currentUrl}`);
         await sharedPage.goto(FUR4_REFERRAL_URL, { 
           timeout: 60000,
           waitUntil: 'domcontentloaded'
@@ -51,15 +51,15 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
       try {
         await sharedPage.waitForLoadState('domcontentloaded', { timeout: 15000 });
         await sharedPage.waitForTimeout(1000);
-        console.log('✅ Page loaded successfully');
+        console.log('Page loaded successfully');
       } catch (error) {
-        console.log('⚠️ Page load timeout, continuing with tests...');
+        console.log('Page load timeout, continuing with tests...');
         await sharedPage.waitForTimeout(1000);
       }
       
-      console.log('✅ Shared home page setup completed successfully for menu modal tests');
+      console.log('Shared home page setup completed successfully for menu modal tests');
     } catch (error) {
-      console.error('❌ Failed to setup shared home page for menu modal tests:', error);
+      console.error('Failed to setup shared home page for menu modal tests:', error);
       throw error;
     }
   });
@@ -69,9 +69,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
     if (sharedPage) {
       try {
         await sharedPage.close();
-        console.log('✅ Shared home page cleanup completed for menu modal tests');
+        console.log('Shared home page cleanup completed for menu modal tests');
       } catch (error) {
-        console.error('❌ Error during home page cleanup for menu modal tests:', error);
+        console.error('Error during home page cleanup for menu modal tests:', error);
       }
     }
   });
@@ -88,9 +88,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
       if (await home.hamburgerMenuButton.count() > 0) {
         await expect(home.hamburgerMenuButton).toBeVisible();
         await expect(home.hamburgerMenuButton).toBeEnabled();
-        console.log('✅ Hamburger menu button found and is clickable');
+        console.log('Hamburger menu button found and is clickable');
       } else {
-        console.log('ℹ️ Hamburger menu button not found on this page');
+        console.log('Hamburger menu button not found on this page');
       }
     });
   });
@@ -105,9 +105,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
     await test.step('Verify menu modal is visible', async () => {
       const isVisible = await menuModal.isModalVisible();
       if (isVisible) {
-        console.log('✅ Menu modal is visible');
+        console.log('Menu modal is visible');
       } else {
-        console.log('ℹ️ Menu modal not visible');
+        console.log('Menu modal not visible');
       }
     });
   });
@@ -138,9 +138,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
       const countrySelector = sharedPage.locator('text=United States, [role="combobox"], select').first();
       if (await countrySelector.count() > 0) {
         await expect(countrySelector).toBeVisible();
-        console.log('✅ Country selector dropdown found');
+        console.log('Country selector dropdown found');
       } else {
-        console.log('ℹ️ Country selector dropdown not found');
+        console.log('Country selector dropdown not found');
       }
     });
   });
@@ -165,9 +165,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
         const link = sharedPage.getByText(linkText);
         if (await link.count() > 0) {
           await expect(link).toBeVisible();
-          console.log(`✅ Navigation link "${linkText}" found`);
+          console.log(`Navigation link "${linkText}" found`);
         } else {
-          console.log(`ℹ️ Navigation link "${linkText}" not found`);
+          console.log(`Navigation link "${linkText}" not found`);
         }
       }
     });
@@ -190,17 +190,17 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
       if (await signInButton.count() > 0) {
         await expect(signInButton).toBeVisible();
         await expect(signInButton).toBeEnabled();
-        console.log('✅ Sign In button found in menu modal');
+        console.log('Sign In button found in menu modal');
       } else {
-        console.log('ℹ️ Sign In button not found in menu modal');
+        console.log('Sign In button not found in menu modal');
       }
       
       if (await signUpButton.count() > 0) {
         await expect(signUpButton).toBeVisible();
         await expect(signUpButton).toBeEnabled();
-        console.log('✅ Sign Up button found in menu modal');
+        console.log('Sign Up button found in menu modal');
       } else {
-        console.log('ℹ️ Sign Up button not found in menu modal');
+        console.log('Sign Up button not found in menu modal');
       }
     });
   });
@@ -219,9 +219,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
       const newsletterText = sharedPage.locator('text=Subscribe to FUR4 Referral newsletter for updates!');
       if (await newsletterText.count() > 0) {
         await expect(newsletterText).toBeVisible();
-        console.log('✅ Newsletter subscription text found');
+        console.log('Newsletter subscription text found');
       } else {
-        console.log('ℹ️ Newsletter subscription text not found');
+        console.log('Newsletter subscription text not found');
       }
     });
   });
@@ -242,9 +242,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
         await expect(emailInput).toBeVisible();
         await expect(emailInput).toBeEnabled();
         await expect(emailInput).toHaveAttribute('placeholder', 'Enter your email');
-        console.log('✅ Email input field found and functional');
+        console.log('Email input field found and functional');
       } else {
-        console.log('ℹ️ Email input field not found');
+        console.log('Email input field not found');
       }
     });
   });
@@ -264,9 +264,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
       if (await subscribeButton.count() > 0) {
         await expect(subscribeButton).toBeVisible();
         await expect(subscribeButton).toBeEnabled();
-        console.log('✅ Subscribe button found and functional');
+        console.log('Subscribe button found and functional');
       } else {
-        console.log('ℹ️ Subscribe button not found');
+        console.log('Subscribe button not found');
       }
     });
   });
@@ -292,9 +292,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
         const link = sharedPage.locator(social.selector);
         if (await link.count() > 0) {
           await expect(link.first()).toBeVisible();
-          console.log(`✅ ${social.name} link found in menu modal`);
+          console.log(`${social.name} link found in menu modal`);
         } else {
-          console.log(`ℹ️ ${social.name} link not found in menu modal`);
+          console.log(`${social.name} link not found in menu modal`);
         }
       }
     });
@@ -315,9 +315,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
       if (await closeButton.count() > 0) {
         await expect(closeButton.first()).toBeVisible();
         await expect(closeButton.first()).toBeEnabled();
-        console.log('✅ Close button found in menu modal');
+        console.log('Close button found in menu modal');
       } else {
-        console.log('ℹ️ Close button not found in menu modal');
+        console.log('Close button not found in menu modal');
       }
     });
   });
@@ -348,9 +348,9 @@ test.describe('FUR4 Referral Site - Menu Modal Tests (Pre-login)', () => {
     await test.step('Verify menu modal is closed', async () => {
       const isVisible = await menuModal.isModalVisible();
       if (!isVisible) {
-        console.log('✅ Menu modal closed successfully');
+        console.log('Menu modal closed successfully');
       } else {
-        console.log('ℹ️ Menu modal may still be visible after close attempt');
+        console.log('Menu modal may still be visible after close attempt');
       }
     });
   });

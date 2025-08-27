@@ -19,7 +19,7 @@ test.describe('FUR4 Referral Site - Register Page Tests (Pre-login)', () => {
     if (sharedPage) {
       const currentUrl = await sharedPage.url();
       if (!currentUrl.includes('/register') && !currentUrl.includes('refer.fur4.com/register')) {
-        console.log(`🔄 Navigating to register page from: ${currentUrl}`);
+        console.log(`Navigating to register page from: ${currentUrl}`);
         await sharedPage.goto(`${FUR4_REFERRAL_URL}/register`, { 
           timeout: 60000,
           waitUntil: 'domcontentloaded'
@@ -50,9 +50,9 @@ test.describe('FUR4 Referral Site - Register Page Tests (Pre-login)', () => {
       await sharedPage.waitForLoadState('networkidle', { timeout: 30000 });
       await sharedPage.waitForTimeout(2000);
       
-      console.log('✅ Shared register page setup completed successfully');
+      console.log('Shared register page setup completed successfully');
     } catch (error) {
-      console.error('❌ Failed to setup shared register page:', error);
+      console.error('Failed to setup shared register page:', error);
       throw error;
     }
   });
@@ -62,9 +62,9 @@ test.describe('FUR4 Referral Site - Register Page Tests (Pre-login)', () => {
     if (sharedPage) {
       try {
         await sharedPage.close();
-        console.log('✅ Shared register page cleanup completed');
+        console.log('Shared register page cleanup completed');
       } catch (error) {
-        console.error('❌ Error during register page cleanup:', error);
+        console.error('Error during register page cleanup:', error);
       }
     }
   });
@@ -300,9 +300,9 @@ test.describe('FUR4 Referral Site - Register Page Tests (Pre-login)', () => {
       if (await register.signInLink.count() > 0) {
         await expect(register.signInLink).toBeVisible();
         await expect(register.signInLink).toBeEnabled();
-        console.log('✅ Sign In link found and is clickable');
+        console.log('Sign In link found and is clickable');
       } else {
-        console.log('ℹ️ Sign In link not found on this page');
+        console.log('Sign In link not found on this page');
       }
     });
     

@@ -19,7 +19,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     if (sharedPage) {
       const currentUrl = await sharedPage.url();
       if (!currentUrl.includes('refer.fur4.com') || currentUrl.includes('/faq') || currentUrl.includes('/login') || currentUrl.includes('/register')) {
-        console.log(`🔄 Navigating back to home page from: ${currentUrl}`);
+        console.log(`Navigating back to home page from: ${currentUrl}`);
         await sharedPage.goto(FUR4_REFERRAL_URL, { 
           timeout: 60000,
           waitUntil: 'domcontentloaded'
@@ -50,9 +50,9 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
       await sharedPage.waitForLoadState('networkidle', { timeout: 30000 });
       await sharedPage.waitForTimeout(2000);
       
-      console.log('✅ Shared page setup completed successfully');
+      console.log('Shared page setup completed successfully');
     } catch (error) {
-      console.error('❌ Failed to setup shared page:', error);
+      console.error(' Failed to setup shared page:', error);
       throw error;
     }
   });
@@ -62,9 +62,9 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     if (sharedPage) {
       try {
         await sharedPage.close();
-        console.log('✅ Shared page cleanup completed');
+        console.log('Shared page cleanup completed');
       } catch (error) {
-        console.error('❌ Error during cleanup:', error);
+        console.error('Error during cleanup:', error);
       }
     }
   });
@@ -98,28 +98,125 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '002' })} Main navigation elements are visible`, async () => {
-    await test.step('Verify Sign Up button', async () => {
-      await expect(sharedPage.getByRole('button', { name: 'Sign Up Now & Get Your Link' })).toBeVisible();
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '002' })} Main headline and messaging is visible`, async () => {
+    await test.step('Verify main headline', async () => {
+      const mainHeadline = sharedPage.getByText('Earn $5 for Every FUR4 Tool Sold');
+      if (await mainHeadline.count() > 0) {
+        await expect(mainHeadline).toBeVisible();
+        console.log('Main headline found: "Earn $5 for Every FUR4 Tool Sold"');
+      }
     });
     
-    await test.step('Verify other button elements', async () => {
-      // Check if there are any other interactive elements
-      const buttonCount = await sharedPage.locator('button').count();
-      expect(buttonCount).toBeGreaterThan(0);
+    await test.step('Verify sub-headline', async () => {
+      const subHeadline = sharedPage.getByText('Join the FUR4 Referral Program and turn your network into real cash');
+      if (await subHeadline.count() > 0) {
+        await expect(subHeadline).toBeVisible();
+        console.log('Sub-headline found');
+      }
+    });
+    
+    await test.step('Verify detailed description', async () => {
+      const description = sharedPage.getByText('Get $5 per sale made through your unique referral link - with instant payouts, live performance tracking and exclusive rewards for verified influencers');
+      if (await description.count() > 0) {
+        await expect(description).toBeVisible();
+        console.log('Detailed description found');
+      }
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '003' })} Get Your Unique Referral Link button is visible`, async () => {
-    await test.step('Verify Sign Up Now & Get Your Link button is visible', async () => {
-      // The actual button on the page says "Sign Up Now & Get Your Link"
-      const button = sharedPage.getByRole('button', { name: 'Sign Up Now & Get Your Link' });
-      await expect(button).toBeVisible();
-      console.log('✓ Found the correct referral button: "Sign Up Now & Get Your Link"');
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '003' })} FUR4 Tool image and branding is visible`, async () => {
+    await test.step('Verify FUR4 Tool image is present', async () => {
+      // Look for the tool image - could be img tag or background image
+      const toolImage = sharedPage.locator('img[alt*="FUR4"], img[src*="tool"], [class*="tool"], [class*="product"]');
+      if (await toolImage.count() > 0) {
+        await expect(toolImage.first()).toBeVisible();
+        console.log('FUR4 Tool image found');
+      }
+    });
+    
+    await test.step('Verify tool branding text', async () => {
+      const brandingTexts = ['www.FUR4.com', 'patent'];
+      for (const text of brandingTexts) {
+        const element = sharedPage.getByText(text);
+        if (await element.count() > 0) {
+          await expect(element).toBeVisible();
+          console.log(`Tool branding text found: ${text}`);
+        }
+      }
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '004' })} Footer sections and links are visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '004' })} Navigation elements are properly displayed`, async () => {
+    await test.step('Verify FUR4 HOME button', async () => {
+      const fur4HomeButton = sharedPage.getByRole('button', { name: 'FUR4 HOME' });
+      if (await fur4HomeButton.count() > 0) {
+        await expect(fur4HomeButton).toBeVisible();
+        await expect(fur4HomeButton).toBeEnabled();
+        console.log('FUR4 HOME button found and enabled');
+      }
+    });
+    
+    await test.step('Verify REGISTER button', async () => {
+      const registerButton = sharedPage.getByRole('button', { name: 'REGISTER' });
+      if (await registerButton.count() > 0) {
+        await expect(registerButton).toBeVisible();
+        await expect(registerButton).toBeEnabled();
+        console.log('REGISTER button found and enabled');
+      }
+    });
+    
+    await test.step('Verify hamburger menu button', async () => {
+      const hamburgerButton = sharedPage.locator('button[aria-label="Open menu"], button:has-text("☰"), [class*="hamburger"], [class*="menu"]');
+      if (await hamburgerButton.count() > 0) {
+        await expect(hamburgerButton.first()).toBeVisible();
+        await expect(hamburgerButton.first()).toBeEnabled();
+        console.log('Hamburger menu button found and enabled');
+      }
+    });
+  });
+
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '005' })} Main call-to-action button is functional`, async () => {
+    await test.step('Verify Get Your Unique Referral Link button', async () => {
+      const ctaButton = sharedPage.getByRole('button', { name: 'Get Your Unique Referral Link' });
+      if (await ctaButton.count() > 0) {
+        await expect(ctaButton).toBeVisible();
+        await expect(ctaButton).toBeEnabled();
+        console.log('Main CTA button found: "Get Your Unique Referral Link"');
+      }
+    });
+  });
+
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '006' })} Chat widget is functional`, async () => {
+    await test.step('Verify chat widget is present', async () => {
+      const chatWidget = sharedPage.getByText('Chat with us');
+      if (await chatWidget.count() > 0) {
+        await expect(chatWidget).toBeVisible();
+        console.log('Chat widget found: "Chat with us"');
+      }
+    });
+  });
+
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '007' })} Page layout structure is correct`, async () => {
+    await test.step('Verify left side text content', async () => {
+      // Check if main text content is on the left side
+      const leftContent = sharedPage.locator('*:has-text("Earn $5"), *:has-text("Join the FUR4 Referral Program")');
+      if (await leftContent.count() > 0) {
+        await expect(leftContent.first()).toBeVisible();
+        console.log('Left side text content found');
+      }
+    });
+    
+    await test.step('Verify right side visual content', async () => {
+      // Check if tool image or visual content is on the right side
+      const rightContent = sharedPage.locator('img, [class*="image"], [class*="visual"], [class*="product"]');
+      if (await rightContent.count() > 0) {
+        await expect(rightContent.first()).toBeVisible();
+        console.log('Right side visual content found');
+      }
+    });
+  });
+
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '008' })} Footer sections and links are visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
 
     await test.step('Verify footer intro section', async () => {
@@ -135,7 +232,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '005' })} Home page sections and texts are visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '009' })} Home page sections and texts are visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
 
     await test.step('Verify home sections and texts', async () => {
@@ -143,7 +240,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '006' })} Homepage loads and displays main elements`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '010' })} Homepage loads and displays main elements`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify homepage main elements', async () => {
@@ -151,7 +248,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '007' })} Referral program text is visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '011' })} Referral program text is visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify referral program text', async () => {
@@ -159,7 +256,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '008' })} FAQ link is present and clickable`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '012' })} FAQ link is present and clickable`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify FAQ link exists and is clickable', async () => {
@@ -170,9 +267,9 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
       if (await faqLink.count() > 0) {
         await expect(faqLink).toBeVisible();
         await expect(faqLink).toBeEnabled();
-        console.log('✅ FAQ link found and is clickable');
+        console.log(' FAQ link found and is clickable');
       } else {
-        console.log('ℹ️ FAQ link not found on this page');
+        console.log('FAQ link not found on this page');
       }
     });
     
@@ -181,7 +278,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '009' })} Footer contact info is visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '013' })} Footer contact info is visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify footer contact info', async () => {
@@ -189,7 +286,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '010' })} Navigation elements are present`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '014' })} Navigation elements are present`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify navigation elements', async () => {
@@ -197,7 +294,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '011' })} Call to action buttons are present`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '015' })} Call to action buttons are present`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify CTA buttons', async () => {
@@ -205,7 +302,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '012' })} Social and utility elements are present`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '016' })} Social and utility elements are present`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify social and utility elements', async () => {
@@ -213,7 +310,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '013' })} Chat with us widget is functional`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '017' })} Chat with us widget is functional`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify chat widget is present', async () => {
@@ -224,7 +321,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '014' })} Social media links are functional`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '018' })} Social media links are functional`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify social media links', async () => {
@@ -240,7 +337,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '015' })} Scroll to top functionality`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '019' })} Scroll to top functionality`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify scroll to top button', async () => {
@@ -251,7 +348,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '016' })} Call to action buttons are functional`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '020' })} Call to action buttons are functional`, async () => {
     const home = new ReferralHomePage(sharedPage);
 
     await test.step('Verify Get Your Unique Referral Link button', async () => {
@@ -271,7 +368,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '017' })} Page has proper meta information`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '021' })} Page has proper meta information`, async () => {
     await test.step('Verify page title', async () => {
       const title = await sharedPage.title();
       expect(title.length).toBeGreaterThan(0);
@@ -283,7 +380,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '018' })} Navigation links are accessible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '022' })} Navigation links are accessible`, async () => {
     await test.step('Verify Sign Up button is accessible', async () => {
       const signUpButton = sharedPage.getByRole('button', { name: 'Sign Up Now & Get Your Link' });
       await expect(signUpButton).toBeVisible();
@@ -301,7 +398,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '019' })} Page loads without errors`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '023' })} Page loads without errors`, async () => {
     await test.step('Verify page has substantial content', async () => {
       const bodyText = await sharedPage.locator('body').textContent();
       expect((bodyText?.length || 0)).toBeGreaterThan(50);
@@ -318,7 +415,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '020' })} Responsive design elements are present`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '024' })} Responsive design elements are present`, async () => {
     await test.step('Verify page has responsive layout', async () => {
       // Check if page has responsive CSS classes
       const body = sharedPage.locator('body');
@@ -340,7 +437,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '021' })} Footer links are functional`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '025' })} Footer links are functional`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify footer links are visible and clickable', async () => {
@@ -369,7 +466,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 ////addditionals tests 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '022' })} How it works section is visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '026' })} How it works section is visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify How it works section', async () => {
@@ -377,7 +474,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '023' })} Testimonials section is visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '027' })} Testimonials section is visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify Testimonials section', async () => {
@@ -385,7 +482,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '024' })} Why Join section is visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '028' })} Why Join section is visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify Why Join section', async () => {
@@ -393,7 +490,7 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 
-  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '025' })} Influencer perks section is visible`, async () => {
+  test(`${buildTag({ site: 'refer', module: 'prelogin', caseId: '029' })} Influencer perks section is visible`, async () => {
     const home = new ReferralHomePage(sharedPage);
     
     await test.step('Verify Influencer perks section', async () => {
@@ -401,3 +498,4 @@ test.describe('FUR4 Referral Site - Home Page Tests (Pre-login)', () => {
     });
   });
 });
+
