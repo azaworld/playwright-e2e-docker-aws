@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # FUR4 Playwright Test Suite - AWS Deployment Script
-# Server: 54.215.243.212
-# Username: arifuz
+# Target server is supplied through environment variables.
 
 set -e
 
@@ -15,9 +14,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-SERVER_IP="54.215.243.212"
-USERNAME="arifuz"
-REMOTE_DIR="/home/arifuz/fur4-playwright"
+SERVER_HOST="${SERVER_HOST:?Set SERVER_HOST to the deployment host}"
+SERVER_USER="${SERVER_USER:?Set SERVER_USER to the SSH username}"
+REMOTE_DIR="${REMOTE_DIR:-/home/${SERVER_USER}/fur4-playwright}"
 DOCKER_IMAGE_NAME="fur4-playwright-tests"
 
 # Function to print colored output
@@ -56,7 +55,7 @@ fi
 print_status "🔧 Setting up remote server..."
 
 # Create remote directory and copy files
-ssh $USERNAME@$SERVER_IP << 'EOF'
+ssh $SERVER_USER@$SERVER_HOST << 'EOF'
     # Create directory structure
     mkdir -p ~/fur4-playwright/{logs,test-results,playwright-report}
     
@@ -86,12 +85,12 @@ EOF
 print_status "📁 Copying project files to server..."
 
 # Copy project files to server
-scp -r . $USERNAME@$SERVER_IP:$REMOTE_DIR/
+scp -r . $SERVER_USER@$SERVER_HOST:$REMOTE_DIR/
 
 print_status "🐳 Building and starting Docker containers..."
 
 # Build and start containers on remote server
-ssh $USERNAME@$SERVER_IP << EOF
+ssh $SERVER_USER@$SERVER_HOST << EOF
     cd $REMOTE_DIR
     
     # Build Docker image
@@ -114,7 +113,7 @@ EOF
 print_status "⏰ Setting up PM2 scheduling..."
 
 # Set up PM2 on the host (not in container for better reliability)
-ssh $USERNAME@$SERVER_IP << EOF
+ssh $SERVER_USER@$SERVER_HOST << EOF
     cd $REMOTE_DIR
     
     # Create PM2 ecosystem file for host scheduling
@@ -163,16 +162,16 @@ print_status "✅ Deployment completed successfully!"
 
 echo ""
 echo "📊 Deployment Summary:"
-echo "  • Server: $SERVER_IP"
+echo "  • Server: $SERVER_HOST"
 echo "  • Directory: $REMOTE_DIR"
 echo "  • Docker containers: Running"
 echo "  • PM2 scheduler: Active (every 15 minutes)"
 echo "  • Logs: $REMOTE_DIR/logs/"
 echo ""
 echo "🔧 Useful commands:"
-echo "  • View logs: ssh $USERNAME@$SERVER_IP 'cd $REMOTE_DIR && docker-compose logs -f'"
-echo "  • PM2 status: ssh $USERNAME@$SERVER_IP 'pm2 status'"
-echo "  • PM2 logs: ssh $USERNAME@$SERVER_IP 'pm2 logs'"
-echo "  • Restart tests: ssh $USERNAME@$SERVER_IP 'cd $REMOTE_DIR && docker-compose restart'"
+echo "  • View logs: ssh $SERVER_USER@$SERVER_HOST 'cd $REMOTE_DIR && docker-compose logs -f'"
+echo "  • PM2 status: ssh $SERVER_USER@$SERVER_HOST 'pm2 status'"
+echo "  • PM2 logs: ssh $SERVER_USER@$SERVER_HOST 'pm2 logs'"
+echo "  • Restart tests: ssh $SERVER_USER@$SERVER_HOST 'cd $REMOTE_DIR && docker-compose restart'"
 echo ""
 echo "🎯 Tests will run every 15 minutes and send Teams notifications on any failures." 
