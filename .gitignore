@@ -18,3 +18,8 @@ tests/fixtures/*.json # Ignore JSON fixtures, use TypeScript fixtures instead
 **/*.webm
 **/*.png
 **/*.mp4
+/allure-results/
+/allure-report/
+/logs/
+*.log
+debug-*.png
