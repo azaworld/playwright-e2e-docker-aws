@@ -122,7 +122,6 @@ let fetchFn: any = typeof fetch === 'function'
   : (...args: any[]) => import('node-fetch').then(({default: fetch}) => (fetch as any)(...args));
 
 const webhookUrl = process.env.TEAMS_WEBHOOK_URL;
-console.log('DEBUG: TEAMS_WEBHOOK_URL is', webhookUrl ? webhookUrl.slice(0, 30) + '...' : 'NOT SET');
 if (!webhookUrl) {
   console.log('⚠️  No Teams webhook URL configured, skipping notification');
   process.exit(0);
