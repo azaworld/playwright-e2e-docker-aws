@@ -38,7 +38,7 @@ Create a `.env` file in the root directory:
 
 ```env
 # Teams webhook URL for notifications (optional)
-TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/....
+TEAMS_WEBHOOK_URL=<your-teams-webhook-url>
 
 # Test configuration
 TEST_TIMEOUT=60000
@@ -82,15 +82,18 @@ npm run deploy:aws
 #### Manual Deployment Steps
 
 ```bash
-# 1. SSH to your AWS server
-ssh arifuz@54.215.243.212
+# 1. Configure the target and connect
+export SERVER_HOST="<your-server-host>"
+export SERVER_USER="<your-server-user>"
+export REMOTE_DIR="/home/$SERVER_USER/fur4-playwright"
+ssh "$SERVER_USER@$SERVER_HOST"
 
 # 2. Create project directory
 mkdir -p ~/fur4-playwright
 cd ~/fur4-playwright
 
 # 3. Copy project files (from your local machine)
-scp -r . arifuz@54.215.243.212:~/fur4-playwright/
+scp -r . "$SERVER_USER@$SERVER_HOST:$REMOTE_DIR/"
 
 # 4. Build and start containers
 docker-compose build
@@ -104,9 +107,9 @@ pm2 startup
 
 #### Server Configuration
 
-- **Server IP:** 54.215.243.212
-- **Username:** arifuz
-- **Port:** 22
+- **Server host:** Set with `SERVER_HOST`
+- **Username:** Set with `SERVER_USER`
+- **Port:** Set through your SSH configuration
 - **Test Schedule:** Every 15 minutes
 - **Logs:** `/home/arifuz/fur4-playwright/logs/`
 
@@ -114,16 +117,16 @@ pm2 startup
 
 ```bash
 # View container logs
-ssh arifuz@54.215.243.212 'cd ~/fur4-playwright && docker-compose logs -f'
+ssh "$SERVER_USER@$SERVER_HOST" 'cd ~/fur4-playwright && docker-compose logs -f'
 
 # Check PM2 status
-ssh arifuz@54.215.243.212 'pm2 status'
+ssh "$SERVER_USER@$SERVER_HOST" 'pm2 status'
 
 # View PM2 logs
-ssh arifuz@54.215.243.212 'pm2 logs'
+ssh "$SERVER_USER@$SERVER_HOST" 'pm2 logs'
 
 # Restart services
-ssh arifuz@54.215.243.212 'cd ~/fur4-playwright && docker-compose restart'
+ssh "$SERVER_USER@$SERVER_HOST" 'cd ~/fur4-playwright && docker-compose restart'
 ```
 
 ## 🧪 Running Tests
@@ -214,7 +217,7 @@ The test suite automatically sends notifications to Microsoft Teams when tests c
 3. Copy the webhook URL
 4. Add to your `.env` file:
    ```env
-   TEAMS_WEBHOOK_URL=https://platformzus.webhook.office.com/webhookb2/
+   TEAMS_WEBHOOK_URL=<your-teams-webhook-url>
    ```
 
 ### Notification Features
